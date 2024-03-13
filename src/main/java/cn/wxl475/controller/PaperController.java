@@ -1,10 +1,30 @@
 package cn.wxl475.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import cn.wxl475.pojo.Paper;
+import cn.wxl475.pojo.Result;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/exam")
 public class PaperController {
-
+    @PostMapping("/createPaper")
+    public Result createPaper(@RequestBody Paper paper) {
+        return Result.success();
+    }
+    @PostMapping("/deletePaper")
+    public Result deletePaper(@RequestBody Paper paper) {
+        return Result.success();
+    }
+    @PostMapping("/updatePaper")
+    public Result updatePaper(@RequestBody Paper paper) {
+        return Result.success();
+    }
+    @PostMapping("/getPapers")
+    public Result getPapers(@RequestBody Paper paper) {
+        return Result.success();
+    }
+    @GetMapping("/getPaperById")
+    public Result getPaperById(@RequestParam Long paperId) {
+        return Result.success();
+    }
 }

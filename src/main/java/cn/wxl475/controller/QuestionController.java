@@ -15,4 +15,20 @@ public class QuestionController {
     public Result createQuestion(@RequestBody Question question) {
         return Result.success();
     }
+    @PostMapping("/deleteQuestion")
+    public Result deleteQuestion(@RequestBody Question question) {
+        return Result.success();
+    }
+    @PostMapping("/updateQuestion")
+    public Result updateQuestion(@RequestBody Question question) {
+        return Result.success();
+    }
+    @PostMapping("/getQuestions")
+    public Result getQuestions(@RequestBody Question question) {
+        return Result.success();
+    }
+    @GetMapping("/getQuestionById")
+    public Result getQuestionById(@RequestParam Long questionId) {
+        return Result.success();
+    }
 }
