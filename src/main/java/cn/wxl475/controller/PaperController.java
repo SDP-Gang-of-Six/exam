@@ -2,11 +2,17 @@ package cn.wxl475.controller;
 
 import cn.wxl475.pojo.Paper;
 import cn.wxl475.pojo.Result;
+import cn.wxl475.service.PaperService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/exam")
 public class PaperController {
+
+    @Autowired
+    private PaperService paperService;
+
     @PostMapping("/createPaper")
     public Result createPaper(@RequestBody Paper paper) {
         return Result.success();
