@@ -2,11 +2,10 @@ package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.Question;
-import cn.wxl475.pojo.User;
 import cn.wxl475.redis.CacheClient;
-import cn.wxl475.service.PaperService;
 import cn.wxl475.service.QuestionService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static cn.wxl475.redis.RedisConstants.CACHE_QUESTION_KEY;
 import static cn.wxl475.redis.RedisConstants.CACHE_QUESTION_TTL;
 
+@Slf4j
 @Service
 public class QuestionServiceImpl implements QuestionService {
 
@@ -28,7 +28,6 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Long createQuestion(Question question) {
         questionMapper.insert(question);
-        cacheClient.setWithLogicalExpire(CACHE_QUESTION_KEY + question.getQuestionId().toString(), question, CACHE_QUESTION_TTL, TimeUnit.MINUTES);
         return question.getQuestionId();
     }
 
