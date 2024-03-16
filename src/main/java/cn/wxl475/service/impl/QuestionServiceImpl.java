@@ -4,6 +4,7 @@ import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.Question;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.QuestionService;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,6 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Long createQuestion(Question question) {
         questionMapper.insert(question);
-        cacheClient.setWithRandomExpire(CACHE_QUESTION_KEY + question.getQuestionId(), question, CACHE_QUESTION_TTL, TimeUnit.MINUTES);
         return question.getQuestionId();
     }
 
@@ -55,6 +55,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @DS("slave")
     public Question getQuestionById(Long questionId) {
         return cacheClient.queryWithPassThrough(
                 CACHE_QUESTION_KEY,
@@ -68,6 +69,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @DS("slave")
     public List<Question> getQuestions(String allField, String tag) {
         if (tag.isEmpty() && allField.isEmpty()) {
             return questionMapper.selectList(null);
