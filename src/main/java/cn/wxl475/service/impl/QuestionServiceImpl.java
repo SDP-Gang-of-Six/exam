@@ -13,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static cn.wxl475.redis.RedisConstants.CACHE_QUESTION_KEY;
-import static cn.wxl475.redis.RedisConstants.CACHE_QUESTION_TTL;
+import static cn.wxl475.redis.RedisConstants.*;
 
 @Slf4j
 @Service
@@ -28,6 +27,7 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Long createQuestion(Question question) {
         questionMapper.insert(question);
+        cacheClient.setWithRandomExpire(CACHE_QUESTION_KEY + question.getQuestionId(), question, CACHE_QUESTION_TTL, TimeUnit.MINUTES);
         return question.getQuestionId();
     }
 
@@ -42,7 +42,15 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Long updateQuestion(Question question) {
         questionMapper.updateById(question);
-        cacheClient.setWithLogicalExpire(CACHE_QUESTION_KEY + question.getQuestionId().toString(), question, CACHE_QUESTION_TTL, TimeUnit.MINUTES);
+        cacheClient.resetKey(
+                CACHE_QUESTION_KEY,
+                LOCK_QUESTION_KEY,
+                question.getQuestionId(),
+                Question.class,
+                id -> questionMapper.selectById(question.getQuestionId()),
+                CACHE_QUESTION_TTL,
+                TimeUnit.MINUTES
+        );
         return question.getQuestionId();
     }
 
@@ -50,6 +58,7 @@ public class QuestionServiceImpl implements QuestionService {
     public Question getQuestionById(Long questionId) {
         return cacheClient.queryWithPassThrough(
                 CACHE_QUESTION_KEY,
+                LOCK_QUESTION_KEY,
                 questionId,
                 Question.class,
                 id ->  questionMapper.selectById(questionId),
