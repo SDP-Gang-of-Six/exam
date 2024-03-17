@@ -6,6 +6,9 @@ import cn.wxl475.service.PaperService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequestMapping("/exam")
 public class PaperController {
@@ -15,10 +18,12 @@ public class PaperController {
 
     @PostMapping("/createPaper")
     public Result createPaper(@RequestBody Paper paper) {
-        return Result.success();
+        return Result.success(paperService.createPaper(paper));
     }
     @PostMapping("/deletePaper")
-    public Result deletePaper(@RequestBody Paper paper) {
+    public Result deletePaper(@RequestBody() List<Long> paperIds) {
+        ArrayList<Long> arrayList = new ArrayList<>(paperIds);
+        paperService.deletePaper(arrayList);
         return Result.success();
     }
     @PostMapping("/updatePaper")
