@@ -36,6 +36,6 @@ public class PaperController {
     }
     @GetMapping("/getPaperById")
     public Result getPaperById(@RequestParam("paperId") Long paperId) {
-        return Result.success(paperService.getPaperById(paperId);
+        return Result.success(paperService.getPaperById(paperId));
     }
 }
