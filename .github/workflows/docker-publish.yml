@@ -19,7 +19,7 @@ env:
   USERNAME: 1715142548
   PASSWORD: wxl5211314
   # github.repository as <account>/<repo>
-  IMAGE_NAME: 1715142548/PHproject/exam
+  IMAGE_NAME: 1715142548/PHexam
 
   #DOCKERHUB_TOKEN: dckr_pat_wgZq0KEbbeDRaDV5LwRTuLAkCjM
 jobs:
