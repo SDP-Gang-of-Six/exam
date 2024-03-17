@@ -13,6 +13,8 @@ env:
   PASSWORD: wxl5211314
   TARGET_MODULE: exam
   IMAGE_NAME: 1715142548/pet-hospital-exam
+  # 服务器root密码
+  ROOT_PASSWORD: Wxl5211314.0.
 
 jobs:
   build:
@@ -142,3 +144,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           file: ./${{ env.TARGET_MODULE }}/Dockerfile
+
+      - name: Run command via SSH
+        run: sshpass -p "${{ env.ROOT_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@wxl475.cn "sh /root/pet-hospital/${{ env.TARGET_MODULE }}.sh"
