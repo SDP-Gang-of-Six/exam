@@ -28,14 +28,14 @@ public class PaperController {
     }
     @PostMapping("/updatePaper")
     public Result updatePaper(@RequestBody Paper paper) {
-        return Result.success();
+        return Result.success(paperService.updatePaper(paper));
     }
     @PostMapping("/getPapers")
     public Result getPapers(@RequestBody Paper paper) {
         return Result.success();
     }
     @GetMapping("/getPaperById")
-    public Result getPaperById(@RequestParam Long paperId) {
-        return Result.success();
+    public Result getPaperById(@RequestParam("paperId") Long paperId) {
+        return Result.success(paperService.getPaperById(paperId);
     }
 }

@@ -8,4 +8,8 @@ public interface PaperService {
     Long createPaper(Paper paper);
 
     void deletePaper(ArrayList<Long> arrayList);
+
+    Long updatePaper(Paper paper);
+
+    Paper getPaperById(Long paperId);
 }
