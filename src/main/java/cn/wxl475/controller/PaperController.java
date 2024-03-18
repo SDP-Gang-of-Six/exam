@@ -1,6 +1,7 @@
 package cn.wxl475.controller;
 
 import cn.wxl475.pojo.Paper;
+import cn.wxl475.pojo.PaperCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.PaperService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +18,12 @@ public class PaperController {
     private PaperService paperService;
 
     @PostMapping("/createPaper")
-    public Result createPaper(@RequestBody Paper paper) {
-        return Result.success(paperService.createPaper(paper));
+    public Result createPaper(@RequestBody PaperCreater paperCreater) {
+        Long paperId = paperService.createPaper(paperCreater);
+        if (paperId.equals(-1L)) {
+            return Result.error("试卷总分与题目分数不符");
+        }
+        return Result.success(paperId);
     }
     @PostMapping("/deletePaper")
     public Result deletePaper(@RequestBody() List<Long> paperIds) {
@@ -27,8 +32,12 @@ public class PaperController {
         return Result.success();
     }
     @PostMapping("/updatePaper")
-    public Result updatePaper(@RequestBody Paper paper) {
-        return Result.success(paperService.updatePaper(paper));
+    public Result updatePaper(@RequestBody PaperCreater paperCreater) {
+        Long paperId = paperService.updatePaper(paperCreater);
+        if (paperId.equals(-1L)) {
+            return Result.error("试卷总分与题目分数不符");
+        }
+        return Result.success(paperId);
     }
     @PostMapping("/getPapers")
     public Result getPapers(@RequestBody Paper paper) {
