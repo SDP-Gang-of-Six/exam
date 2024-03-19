@@ -18,7 +18,7 @@ public class ExamController {
 
     @PostMapping("/startExam")
     public Result startExam(@RequestBody Exam exam) {
-        return Result.success();
+        return Result.success(examService.startExam(exam));
     }
     @PostMapping("/getExams")
     public Result getExams(@RequestBody Exam paper) {
