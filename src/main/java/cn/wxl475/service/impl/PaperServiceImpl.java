@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static cn.wxl475.redis.RedisConstants.*;
@@ -39,8 +40,8 @@ public class PaperServiceImpl implements PaperService {
         if (!isSumEqualTotalScore(paperScoreCreaters, paper.getTotalScore())) {
             return -1L;
         }
-        ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
         paperMapper.insert(paper);
+        ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
         for (PaperScore paperScore : paperScores) {
             paperScoreMapper.insert(paperScore);
         }
@@ -50,9 +51,10 @@ public class PaperServiceImpl implements PaperService {
     @Override
     public void deletePaper(ArrayList<Long> arrayList) {
         paperMapper.deleteBatchIds(arrayList);
-        paperScoreMapper.deleteByPaperIds(arrayList);
+        paperScoreMapper.deleteByPaperIds(arrayList.toArray(new Long[0]));
         for (Long id : arrayList) {
-            cacheClient.delete(CACHE_PAPER_KEY + id.toString());
+            cacheClient.delete(CACHE_PAPER_KEY + id);
+            cacheClient.delete(CACHE_PAPERSCORE_KEY + id);
         }
     }
 
@@ -61,12 +63,8 @@ public class PaperServiceImpl implements PaperService {
     public Long updatePaper(PaperCreater paperCreater) {
         Paper paper = ConvertUtil.convertPaperCreaterToPaper(paperCreater);
         ArrayList<PaperScoreCreater> paperScoreCreaters = paperCreater.getPaperScores();
-        if (!isSumEqualTotalScore(paperScoreCreaters, paper.getTotalScore())) {
-            return -1L;
-        }
-        ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
         paperMapper.updateById(paper);
-        cacheClient.resetKey(
+        Paper Repaper = cacheClient.resetKey(
                 CACHE_PAPER_KEY,
                 LOCK_PAPER_KEY,
                 paper.getPaperId(),
@@ -75,11 +73,26 @@ public class PaperServiceImpl implements PaperService {
                 CACHE_PAPER_TTL,
                 TimeUnit.MINUTES
         );
-        paperScoreMapper.deleteByPaperIds(new ArrayList<Long>() {{
-            add(paper.getPaperId());
-        }});
-        for (PaperScore paperScore : paperScores) {
-            paperScoreMapper.insert(paperScore);
+        if (!isSumEqualTotalScore(paperScoreCreaters, Repaper.getTotalScore())) {
+            throw new RuntimeException("试卷总分与题目分数不符");
+        }
+        if (paperScoreCreaters.size() != 0) {
+            ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
+            ArrayList<Long> arrayList = new ArrayList<>();
+            arrayList.add(paper.getPaperId());
+            paperScoreMapper.deleteByPaperIds(arrayList.toArray(new Long[0]));
+            for (PaperScore paperScore : paperScores) {
+                paperScoreMapper.insert(paperScore);
+            }
+            cacheClient.resetKey(
+                    CACHE_PAPERSCORE_KEY,
+                    LOCK_PAPERSCORE_KEY,
+                    paper.getPaperId(),
+                    List.class,
+                    id -> getPaperScoresByPaperId(paper.getPaperId()),
+                    CACHE_PAPERSCORE_TTL,
+                    TimeUnit.MINUTES
+            );
         }
         return paper.getPaperId();
     }
@@ -98,11 +111,39 @@ public class PaperServiceImpl implements PaperService {
         );
     }
 
+    @Override
+    public PaperCreater getPaperDetailById(Long paperId) {
+        Paper paper = cacheClient.queryWithPassThrough(
+                CACHE_PAPER_KEY,
+                LOCK_PAPER_KEY,
+                paperId,
+                Paper.class,
+                id -> paperMapper.selectById(paperId),
+                CACHE_PAPER_TTL,
+                TimeUnit.MINUTES
+        );
+        List<PaperScore> paperScores = cacheClient.queryListWithPassThrough(
+                CACHE_PAPERSCORE_KEY,
+                LOCK_PAPERSCORE_KEY,
+                paperId,
+                PaperScore.class,
+                id -> getPaperScoresByPaperId(paperId),
+                CACHE_PAPERSCORE_TTL,
+                TimeUnit.MINUTES
+        );
+        return ConvertUtil.convertPaperToPaperCreater(paper, (ArrayList<PaperScore>) paperScores);
+    }
+
+
     private boolean isSumEqualTotalScore(ArrayList<PaperScoreCreater> paperScoreCreaters, Integer totalScore) {
         Integer sum = 0;
         for (PaperScoreCreater paperScoreCreater : paperScoreCreaters) {
             sum += paperScoreCreater.getScore();
         }
         return sum.equals(totalScore);
+    }
+
+    private List<PaperScore> getPaperScoresByPaperId(Long paperId) {
+        return paperScoreMapper.selectByPaperId(paperId);
     }
 }

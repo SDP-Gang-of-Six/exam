@@ -21,7 +21,7 @@ public class PaperController {
     public Result createPaper(@RequestBody PaperCreater paperCreater) {
         Long paperId = paperService.createPaper(paperCreater);
         if (paperId.equals(-1L)) {
-            return Result.error("试卷总分与题目分数不符");
+            return Result.error("createPaper: 试卷总分与题目分数不符");
         }
         return Result.success(paperId);
     }
@@ -35,7 +35,7 @@ public class PaperController {
     public Result updatePaper(@RequestBody PaperCreater paperCreater) {
         Long paperId = paperService.updatePaper(paperCreater);
         if (paperId.equals(-1L)) {
-            return Result.error("试卷总分与题目分数不符");
+            return Result.error("updatePaper: 试卷总分与题目分数不符");
         }
         return Result.success(paperId);
     }
@@ -46,5 +46,9 @@ public class PaperController {
     @GetMapping("/getPaperById")
     public Result getPaperById(@RequestParam("paperId") Long paperId) {
         return Result.success(paperService.getPaperById(paperId));
+    }
+    @GetMapping("/getPaperDetailById")
+    public Result getPaperDetailById(@RequestParam("paperId") Long paperId) {
+        return Result.success(paperService.getPaperDetailById(paperId));
     }
 }

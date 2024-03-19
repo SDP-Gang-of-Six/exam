@@ -13,4 +13,6 @@ public interface PaperService {
     Long updatePaper(PaperCreater paperCreater);
 
     Paper getPaperById(Long paperId);
+
+    PaperCreater getPaperDetailById(Long paperId);
 }

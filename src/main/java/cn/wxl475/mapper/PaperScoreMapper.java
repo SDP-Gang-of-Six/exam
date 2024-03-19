@@ -2,13 +2,16 @@ package cn.wxl475.mapper;
 
 import cn.wxl475.pojo.PaperScore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.ArrayList;
 
 @Mapper
 public interface PaperScoreMapper extends BaseMapper<PaperScore> {
-    @Delete("delete from paperScore where paper_id in (#{arrayList})")
-    void deleteByPaperIds(ArrayList<Long> arrayList);
+
+    void deleteByPaperIds(Long[] arrayList);
+
+    @Select("select * from exam.paperScore where paper_id = #{paperId}")
+    ArrayList<PaperScore> selectByPaperId(Long paperId);
 }
