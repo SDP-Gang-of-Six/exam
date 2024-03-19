@@ -13,15 +13,17 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     //插入时的填充策略
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.info("start intsert fill ....");
+        log.info("start insert fill createTime");
         //strictInsertFill(MetaObject metaObject, String fieldName, Class<T> fieldType, E fieldVal)
         this.strictInsertFill(metaObject,"createTime", LocalDateTime.class,LocalDateTime.now());// 起始版本 3.3.0(推荐使用)
+        log.info("start insert fill updateTime");
+        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now()); // 起始版本 3.3.0(推荐)
     }
 
     //更新时的填充策略
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.info("start update fill ....");
+        log.info("start update fill updateTime");
         this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now()); // 起始版本 3.3.0(推荐)
     }
 }
