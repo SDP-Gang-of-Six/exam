@@ -1,6 +1,7 @@
 package cn.wxl475.controller;
 
 import cn.wxl475.pojo.Exam;
+import cn.wxl475.pojo.ExamCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,12 @@ public class ExamController {
     }
     @PostMapping("/saveExam")
     public Result saveExam(@RequestBody Exam exam) {
+
         return Result.success();
     }
     @PostMapping("/submitPaper")
-    public Result submitPaper(@RequestBody Exam exam) {
+    public Result submitPaper(@RequestBody ExamCreater examCreater) {
+        examService.submitPaper(examCreater);
         return Result.success();
     }
     @PostMapping("/getExamDetail")

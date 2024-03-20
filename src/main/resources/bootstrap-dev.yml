@@ -58,7 +58,7 @@ spring:
 
         server-addr: wxl475.cn:8848 #nacos配置中心
 
-        namespace: #配置命名空间,默认public,即不用填
+        namespace: dev #配置命名空间,默认public,即不用填
 
         username: nacos
 
