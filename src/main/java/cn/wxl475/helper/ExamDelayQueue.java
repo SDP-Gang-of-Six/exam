@@ -21,6 +21,7 @@ public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
      */
     @Override
     public void invoke(String jobId) {
+
         log.info("延时队列处理业务逻辑,jobId:{}", jobId);
 
     }

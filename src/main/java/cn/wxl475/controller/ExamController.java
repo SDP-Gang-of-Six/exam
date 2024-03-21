@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/exam")
 public class ExamController {
@@ -21,22 +23,29 @@ public class ExamController {
     public Result startExam(@RequestBody Exam exam) {
         return Result.success(examService.startExam(exam));
     }
-    @PostMapping("/getExams")
-    public Result getExams(@RequestBody Exam paper) {
-        return Result.success();
+    @PostMapping("/setExam")
+    public Result setExam(@RequestBody Exam exam) {
+        return Result.success(examService.setExam(exam));
+    }
+    @PostMapping("/setExams")
+    public Result setExams(@RequestBody List<Exam> exams) {
+        return Result.success(examService.setExams(exams));
     }
     @PostMapping("/saveExam")
-    public Result saveExam(@RequestBody Exam exam) {
-
+    public Result saveExam(@RequestBody ExamCreater examCreater) {
+        examService.saveExam(examCreater);
         return Result.success();
     }
     @PostMapping("/submitPaper")
     public Result submitPaper(@RequestBody ExamCreater examCreater) {
-        examService.submitPaper(examCreater);
-        return Result.success();
+        return Result.success(examService.submitPaper(examCreater));
     }
     @PostMapping("/getExamDetail")
     public Result getExamDetail(@RequestBody Long examId) {
+        return Result.success(examService.getExamDetail(examId));
+    }
+    @PostMapping("/getExams")
+    public Result getExams(@RequestBody Exam paper) {
         return Result.success();
     }
 }
