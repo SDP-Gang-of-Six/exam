@@ -3,11 +3,13 @@ package cn.wxl475.service.impl;
 import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.Question;
 import cn.wxl475.redis.CacheClient;
+import cn.wxl475.repo.QuestionEsRepo;
 import cn.wxl475.service.QuestionService;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,16 +26,22 @@ public class QuestionServiceImpl implements QuestionService {
     private QuestionMapper questionMapper;
     @Autowired
     private CacheClient cacheClient;
+    @Autowired
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
+    @Autowired
+    private QuestionEsRepo questionEsRepo;
 
     @Override
     public Long createQuestion(Question question) {
         questionMapper.insert(question);
+        questionEsRepo.save(question);
         return question.getQuestionId();
     }
 
     @Override
     public void deleteQuestion(ArrayList<Long> questionIds) {
         questionMapper.deleteBatchIds(questionIds);
+        questionEsRepo.deleteAllById(questionIds);
         for (Long id : questionIds) {
             cacheClient.delete(CACHE_QUESTION_KEY + id.toString());
         }
@@ -42,6 +50,7 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Long updateQuestion(Question question) {
         questionMapper.updateById(question);
+        questionEsRepo.save(question);
         cacheClient.resetKey(
                 CACHE_QUESTION_KEY,
                 LOCK_QUESTION_KEY,
