@@ -1,75 +1,42 @@
 spring:
-
   application:
-
     name: exam #服务名称
-
   cloud: #要注意缩进，错了会无法注册
-
     nacos:
-
       config:
-
         file-extension: yaml
-
         refresh-enabled: true
-
         enabled: true
-
         extension-configs[0]:
-
           data-id: exam.yaml
-
           group: DEFAULT_GROUP
-
           refresh: true
-
         extension-configs[1]:
-
           data-id: jwt.yaml
-
           group: DEFAULT_GROUP
-
           refresh: true
-
         extension-configs[2]:
-
           data-id: mysql.yaml
-
           group: DEFAULT_GROUP
-
           refresh: true
-
         extension-configs[3]:
-
           data-id: redis.yaml
-
           group: DEFAULT_GROUP
-
           refresh: true
-
         extension-configs[4]:
-
           data-id: mybatis-plus.yaml
-
           group: DEFAULT_GROUP
-
           refresh: true
-
+        extension-configs[5]:
+          data-id: es.yaml
+          group: DEFAULT_GROUP
+          refresh: true
         server-addr: wxl475.cn:8848 #nacos配置中心
-
         namespace: #配置命名空间,默认public,即不用填
-
         username: nacos
-
         password: Wxl5211314.0.
-
       discovery:
-
         server-addr: wxl475.cn:8848 #nacos注册中心
-
         namespace: #注册命名空间,测试时填自己的命名空间
-
         username: nacos
-
         password: Wxl5211314.0.
