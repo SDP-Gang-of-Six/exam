@@ -5,10 +5,7 @@ import cn.wxl475.pojo.ExamCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,8 +37,8 @@ public class ExamController {
     public Result submitPaper(@RequestBody ExamCreater examCreater) {
         return Result.success(examService.submitPaper(examCreater));
     }
-    @PostMapping("/getExamDetail")
-    public Result getExamDetail(@RequestBody Long examId) {
+    @GetMapping("/getExamDetail")
+    public Result getExamDetail(@RequestParam("examId") Long examId) {
         return Result.success(examService.getExamDetail(examId));
     }
     @PostMapping("/getExams")
