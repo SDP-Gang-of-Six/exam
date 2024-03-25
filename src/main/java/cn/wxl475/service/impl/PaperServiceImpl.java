@@ -2,16 +2,22 @@ package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.PaperMapper;
 import cn.wxl475.mapper.PaperScoreMapper;
-import cn.wxl475.pojo.Paper;
-import cn.wxl475.pojo.PaperCreater;
-import cn.wxl475.pojo.PaperScore;
-import cn.wxl475.pojo.PaperScoreCreater;
+import cn.wxl475.pojo.*;
 import cn.wxl475.redis.CacheClient;
+import cn.wxl475.repo.PaperEsRepo;
+import cn.wxl475.repo.QuestionEsRepo;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import jdk.jfr.Enabled;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +36,10 @@ public class PaperServiceImpl implements PaperService {
     private PaperScoreMapper paperScoreMapper;
     @Autowired
     private CacheClient cacheClient;
+    @Autowired
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
+    @Autowired
+    private PaperEsRepo paperEsRepo;
 
 
     @Override
@@ -40,6 +50,7 @@ public class PaperServiceImpl implements PaperService {
             return -1L;
         }
         paperMapper.insert(paper);
+        paperEsRepo.save(paper);
         ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
         for (PaperScore paperScore : paperScores) {
             paperScoreMapper.insert(paperScore);
@@ -50,6 +61,7 @@ public class PaperServiceImpl implements PaperService {
     @Override
     public void deletePaper(ArrayList<Long> arrayList) {
         paperMapper.deleteBatchIds(arrayList);
+        paperEsRepo.deleteAllById(arrayList);
         paperScoreMapper.deleteByPaperIds(arrayList.toArray(new Long[0]));
         for (Long id : arrayList) {
             cacheClient.delete(CACHE_PAPER_KEY + id);
@@ -61,7 +73,6 @@ public class PaperServiceImpl implements PaperService {
     @Transactional
     public Long updatePaper(PaperCreater paperCreater) {
         Paper paper = ConvertUtil.convertPaperCreaterToPaper(paperCreater);
-        ArrayList<PaperScoreCreater> paperScoreCreaters = paperCreater.getPaperScores();
         paperMapper.updateById(paper);
         Paper Repaper = cacheClient.resetKey(
                 CACHE_PAPER_KEY,
@@ -72,9 +83,14 @@ public class PaperServiceImpl implements PaperService {
                 CACHE_PAPER_TTL,
                 TimeUnit.MINUTES
         );
-        if (!isSumEqualTotalScore(paperScoreCreaters, Repaper.getTotalScore())) {
-            throw new RuntimeException("试卷总分与题目分数不符");
+        ArrayList<PaperScoreCreater> paperScoreCreaters = new ArrayList<PaperScoreCreater>();
+        if (paperCreater.getPaperScores()!=null){
+            paperScoreCreaters = paperCreater.getPaperScores();
+            if (!isSumEqualTotalScore(paperScoreCreaters, Repaper.getTotalScore())) {
+                throw new RuntimeException("试卷总分与题目分数不符");
+            }
         }
+        paperEsRepo.save(Repaper);
         if (paperScoreCreaters.size() != 0) {
             ArrayList<PaperScore> paperScores = ConvertUtil.convertPaperScoreCreatersToPaperScores(paperScoreCreaters, paper.getPaperId());
             ArrayList<Long> arrayList = new ArrayList<>();
@@ -131,6 +147,31 @@ public class PaperServiceImpl implements PaperService {
                 TimeUnit.MINUTES
         );
         return ConvertUtil.convertPaperToPaperCreater(paper, (ArrayList<PaperScore>) paperScores);
+    }
+
+    @Override
+    public List<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
+        NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder().withPageable(PageRequest.of(pageNum-1, pageSize));
+        if(allField!=null&& !allField.isEmpty()){
+            queryBuilder.withQuery(QueryBuilders.multiMatchQuery(allField,"paperName","paperDescription","createTime","updateTime"));
+        }
+        if(examTime!=null){
+            queryBuilder.withQuery(QueryBuilders.matchQuery("examTime", examTime));
+        }
+        if(totalScore!=null){
+            queryBuilder.withQuery(QueryBuilders.matchQuery("totalScore",totalScore));
+        }
+        if(sortField==null || sortField.isEmpty()){
+            sortField = "paperId";
+        }
+        if(sortOrder==null || !(sortOrder==1 || sortOrder==-1)){
+            sortOrder=-1;
+        }
+        queryBuilder.withSorts(SortBuilders.fieldSort(sortField).order(sortOrder==-1? SortOrder.DESC:SortOrder.ASC));
+        SearchHits<Paper> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Paper.class);
+        List<Paper> papers = new ArrayList<>();
+        hits.forEach(paper -> papers.add(paper.getContent()));
+        return papers;
     }
 
 

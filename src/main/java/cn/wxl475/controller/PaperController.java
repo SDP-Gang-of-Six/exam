@@ -39,9 +39,18 @@ public class PaperController {
         }
         return Result.success(paperId);
     }
-    @PostMapping("/getPapers")
-    public Result getPapers(@RequestBody Paper paper) {
-        return Result.success();
+    @GetMapping("/getPapers")
+    public Result getPapers(@RequestParam(value = "allField", required = false) String allField,
+                            @RequestParam(value = "examTime", required = false) Integer examTime,
+                            @RequestParam(value = "totalScore", required = false) Integer totalScore,
+                            @RequestParam(value = "pageNum", required = false) Integer pageNum,
+                            @RequestParam(value = "pageSize", required = false) Integer pageSize,
+                            @RequestParam(value = "sortField", required = false) String sortField,
+                            @RequestParam(value = "sortOrder", required = false) Integer sortOrder) {
+        if(pageNum<=0||pageSize<=0){
+            return Result.error("页码或页大小不合法");
+        }
+        return Result.success(paperService.getPapers(allField, examTime, totalScore, pageNum, pageSize, sortField, sortOrder));
     }
     @GetMapping("/getPaperById")
     public Result getPaperById(@RequestParam("paperId") Long paperId) {
