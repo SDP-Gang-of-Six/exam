@@ -9,6 +9,10 @@ import cn.wxl475.service.ExamService;
 import cn.wxl475.helper.ExamDelayQueue;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
+import com.baomidou.dynamic.datasource.annotation.DS;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -246,6 +250,7 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    @DS("slave")
     public ArrayList<Object> getExamDetail(Long examId) {
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
@@ -269,6 +274,18 @@ public class ExamServiceImpl implements ExamService {
         result.add(exam);
         result.add(ExamDetail);
         return result;
+    }
+
+    @Override
+    @DS("slave")
+    public ArrayList<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
+        IPage<Exam> page=new Page<>(pageNum,pageSize);
+        List<Exam> exams = examMapper.selectList(page, new QueryWrapper<Exam>()
+                .eq(userId!=null,"user_id",userId)
+                .eq(paperId!=null,"paper_id",paperId)
+                .eq(status!=null,"status",status)
+        );
+        return new ArrayList<Exam>(exams);
     }
 }
 

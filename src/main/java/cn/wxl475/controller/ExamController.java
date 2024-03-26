@@ -41,8 +41,15 @@ public class ExamController {
     public Result getExamDetail(@RequestParam("examId") Long examId) {
         return Result.success(examService.getExamDetail(examId));
     }
-    @PostMapping("/getExams")
-    public Result getExams(@RequestBody Exam paper) {
-        return Result.success();
+    @GetMapping("/getExams")
+    public Result getExams(@RequestParam(value = "userId", required = false) Long userId,
+                           @RequestParam(value = "paperId", required = false) Long paperId,
+                           @RequestParam(value = "status", required = false) Boolean status,
+                           @RequestParam(value = "pageNum", required = false) Integer pageNum,
+                           @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+        if(pageNum<=0||pageSize<=0){
+            return Result.error("页码或页大小不合法");
+        }
+        return Result.success(examService.getExams(userId, paperId, status, pageNum, pageSize));
     }
 }
