@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="false">
-    <springProperty scope="context" name="serverName" source="spring.application.name" defaultValue="exam" />
+    <springProperty scope="context" name="serverName" source="spring.application.name" defaultValue="unKnowServer" />
 
     <property name="PATTERN"
               value="%-12(%d{yyyy-MM-dd HH:mm:ss.SSS}) %-5level [${serverName}] [%thread] [%c]: %msg%n " />
