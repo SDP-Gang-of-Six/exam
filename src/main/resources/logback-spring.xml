@@ -6,17 +6,35 @@
               value="%-12(%d{yyyy-MM-dd HH:mm:ss.SSS}) %-5level [${serverName}] [%thread] [%c]: %msg%n " />
 
     <!-- 控制台输出 -->
-    <appender name="STDOUT"
+    <appender name="stdout"
               class="ch.qos.logback.core.ConsoleAppender">
         <encoder >
             <pattern>${PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    <!-- 日志输出级别 -->
-    <!-- 级别依次为【从高到低】：FATAL > ERROR > WARN > INFO > DEBUG > TRACE  -->
-    <!-- additivity:是否向上级logger传递打印信息。默认是true。 -->
-    <root level="debug">
-        <appender-ref ref="STDOUT"/>
+
+    <appender name="logfile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>/logs/${serverName}.%d{yyyy-MM-dd}.log</FileNamePattern>
+            <MaxHistory>2</MaxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>512</queueSize>
+        <!-- 指定异步写入名称为 logfile 的 appender，这里最多只能添加一个 appender-ref -->
+        <appender-ref ref="logfile" />
+    </appender>
+
+    <root>
+        <level value="DEBUG"/><!-- TRACE、DEBUG、INFO、WARN和ERROR -->
+        <appender-ref ref="stdout"/>
+        <appender-ref ref="async" />
     </root>
 </configuration>
