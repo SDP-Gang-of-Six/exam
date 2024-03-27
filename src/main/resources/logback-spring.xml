@@ -84,7 +84,7 @@
     </appender>
 
     <root>
-        <level value="DEBUG"/><!-- TRACE、DEBUG、INFO、WARN和ERROR -->
+        <level value="INFO"/><!-- TRACE、DEBUG、INFO、WARN和ERROR -->
         <appender-ref ref="stdout"/>
         <appender-ref ref="async" />
     </root>
