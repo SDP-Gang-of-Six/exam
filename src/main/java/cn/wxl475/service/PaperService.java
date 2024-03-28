@@ -1,8 +1,7 @@
 package cn.wxl475.service;
 
-import cn.wxl475.pojo.Paper;
-import cn.wxl475.pojo.PaperCreater;
-import cn.wxl475.pojo.enums.QuestionType;
+import cn.wxl475.pojo.exam.Paper;
+import cn.wxl475.pojo.exam.PaperCreater;
 
 import java.util.ArrayList;
 import java.util.List;

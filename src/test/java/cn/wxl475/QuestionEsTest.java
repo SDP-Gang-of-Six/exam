@@ -1,6 +1,6 @@
 package cn.wxl475;
 
-import cn.wxl475.pojo.Question;
+import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.repo.QuestionEsRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;

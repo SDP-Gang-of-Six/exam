@@ -1,6 +1,6 @@
 package cn.wxl475.service;
 
-import cn.wxl475.pojo.Question;
+import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.pojo.enums.QuestionType;
 
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 package cn.wxl475.controller;
 
-import cn.wxl475.pojo.Question;
+import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.pojo.enums.QuestionType;
 import cn.wxl475.service.QuestionService;

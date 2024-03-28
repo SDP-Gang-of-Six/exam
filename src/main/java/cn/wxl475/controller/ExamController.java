@@ -1,7 +1,7 @@
 package cn.wxl475.controller;
 
-import cn.wxl475.pojo.Exam;
-import cn.wxl475.pojo.ExamCreater;
+import cn.wxl475.pojo.exam.Exam;
+import cn.wxl475.pojo.exam.ExamCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;

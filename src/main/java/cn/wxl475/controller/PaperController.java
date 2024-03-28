@@ -1,7 +1,6 @@
 package cn.wxl475.controller;
 
-import cn.wxl475.pojo.Paper;
-import cn.wxl475.pojo.PaperCreater;
+import cn.wxl475.pojo.exam.PaperCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.PaperService;
 import org.springframework.beans.factory.annotation.Autowired;

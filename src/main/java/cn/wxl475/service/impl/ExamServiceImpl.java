@@ -3,7 +3,7 @@ package cn.wxl475.service.impl;
 import cn.wxl475.mapper.ExamDetailMapper;
 import cn.wxl475.mapper.ExamMapper;
 import cn.wxl475.mapper.QuestionMapper;
-import cn.wxl475.pojo.*;
+import cn.wxl475.pojo.exam.*;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.ExamService;
 import cn.wxl475.helper.ExamDelayQueue;
@@ -87,8 +87,12 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
 
+        // 获取试卷信息
+        PaperCreater paperCreater = paperService.getPaperDetailById(exam.getPaperId());
+        HashMap<Long,Integer> ScoreMap = ConvertUtil.convertPaperCreaterToMap(paperCreater);
+
         exam.setSubmitTime(LocalDateTime.now());
-        if (exam.getSubmitTime().isAfter(exam.getStartTime().plusMinutes(exam.getDuration()+1))) {
+        if (exam.getSubmitTime().isAfter(exam.getStartTime().plusMinutes(paperCreater.getExamTime()+2))) {
             throw new RuntimeException("submitPaper: 超过考试时间");
         }
         exam.setExamScore(0);
@@ -106,10 +110,6 @@ public class ExamServiceImpl implements ExamService {
         );
         // 混合新旧ExamDetail
         ArrayList<ExamDetail> examDetails = ConvertUtil.mixExamDetails(oldExamDetail, newExamDetails);
-
-        // 获取试卷信息
-        PaperCreater paperCreater = paperService.getPaperDetailById(exam.getPaperId());
-        HashMap<Long,Integer> ScoreMap = ConvertUtil.convertPaperCreaterToMap(paperCreater);
 
         // 计算分数
         for (ExamDetail examDetail : examDetails) {
@@ -212,8 +212,8 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
         // 如果考试已经结束，不允许修改
-        if (LocalDateTime.now().isAfter(exam.getStartTime().plusMinutes(exam.getDuration()+1))) {
-            throw new RuntimeException("submitPaper: 超过考试时间");
+        if (exam.isStatus()==true) {
+            throw new RuntimeException("submitPaper: 考试已经结束，不允许修改");
         }
 
         ArrayList<ExamDetail> newExamDetails = ConvertUtil.convertExamCreatersToExamDetails(examCreater);

@@ -1,7 +1,7 @@
 package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.QuestionMapper;
-import cn.wxl475.pojo.Question;
+import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.pojo.enums.QuestionType;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.repo.QuestionEsRepo;

@@ -2,14 +2,15 @@ package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.PaperMapper;
 import cn.wxl475.mapper.PaperScoreMapper;
-import cn.wxl475.pojo.*;
+import cn.wxl475.pojo.exam.Paper;
+import cn.wxl475.pojo.exam.PaperCreater;
+import cn.wxl475.pojo.exam.PaperScore;
+import cn.wxl475.pojo.exam.PaperScoreCreater;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.repo.PaperEsRepo;
-import cn.wxl475.repo.QuestionEsRepo;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
-import jdk.jfr.Enabled;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
