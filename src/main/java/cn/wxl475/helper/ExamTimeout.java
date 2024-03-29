@@ -9,8 +9,8 @@ import cn.wxl475.pojo.exam.PaperCreater;
 import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.PaperService;
-import cn.wxl475.utils.AbstractDelayQueueMachineFactory;
 import cn.wxl475.utils.ConvertUtil;
+import cn.wxl475.utils.RedisDelayQueueHandle;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,13 +24,10 @@ import java.util.concurrent.TimeUnit;
 
 import static cn.wxl475.redis.RedisConstants.*;
 
-/**
- * 测试延时队列
- *
- */
-@Slf4j
 @Component
-public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
+@Slf4j
+public class ExamTimeout implements RedisDelayQueueHandle<Long> {
+
 
     @Autowired
     private ExamMapper examMapper;
@@ -43,13 +40,11 @@ public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
     @Autowired
     private QuestionMapper questionMapper;
 
-    /**
-     * 处理业务逻辑
-     */
+
     @Override
-    public void invoke(String jobId) {
-        log.info("延时队列处理业务逻辑,jobId:{}", jobId);
-        Long examId = Long.parseLong(jobId);
+    public void execute(Long jobId) {
+        log.info("(收到超时订单延迟消息) {}", jobId);
+        Long examId = jobId;
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
                 LOCK_EXAM_KEY,
@@ -93,7 +88,7 @@ public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
             // 判断答案是否正确
             switch (question.getQuestionType()) {
                 case option:
-                    if (examDetail.getOption() == question.getRightOption()) {
+                    if (examDetail.getYourOption() == question.getRightOption()) {
                         examDetail.setRight(true);
                     } else {
                         examDetail.setRight(false);
@@ -133,8 +128,8 @@ public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
         );
-        List<Long> examIds = new ArrayList<>();
-        examIds.add(exam.getExamId());
+        Long[] examIds = new Long[1];
+        examIds[0] = exam.getExamId();
         examDetailMapper.deleteByExamIds(examIds);
         for (ExamDetail examDetail : examDetails) {
             examDetailMapper.insert(examDetail);
@@ -148,13 +143,5 @@ public class ExamDelayQueue extends AbstractDelayQueueMachineFactory {
                 CACHE_EXAMDETAIL_TTL,
                 TimeUnit.MINUTES
         );
-    }
-
-    /**
-     * 延时队列名统一设定
-     */
-    @Override
-    public String setDelayQueueName() {
-        return "exam_delay_queue";
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="false">
     <springProperty scope="context" name="serverName" source="spring.application.name" defaultValue="exam" />
+    <logger name="org.redisson.connection.SentinelConnectionManager" level="OFF" additivity="false" />
 
     <property name="PATTERN"
               value="%-12(%d{yyyy-MM-dd HH:mm:ss.SSS}) %-5level [${serverName}] [%X{traceId},%X{spanId},%X{sampled}]  [%thread] [%c]: %msg%n " />

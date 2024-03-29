@@ -52,4 +52,9 @@ public class ExamController {
         }
         return Result.success(examService.getExams(userId, paperId, status, pageNum, pageSize));
     }
+    @PostMapping("/deleteExams")
+    public Result deleteExams(@RequestBody List<Long> examIds) {
+        examService.deleteExams(examIds);
+        return Result.success();
+    }
 }

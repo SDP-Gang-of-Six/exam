@@ -6,9 +6,9 @@ import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.exam.*;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.ExamService;
-import cn.wxl475.helper.ExamDelayQueue;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
+import cn.wxl475.utils.RedisDelayQueueUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -34,7 +34,7 @@ public class ExamServiceImpl implements ExamService {
     @Autowired
     private ExamDetailMapper examDetailMapper;
     @Autowired
-    private ExamDelayQueue examDelayQueue;
+    private RedisDelayQueueUtil redisDelayQueueUtil;
     @Autowired
     private CacheClient cacheClient;
     @Autowired
@@ -60,13 +60,12 @@ public class ExamServiceImpl implements ExamService {
             throw new RuntimeException("startExam: 不在考试时间内");
         }
         exam1.setStartTime(LocalDateTime.now());
-        boolean result = examDelayQueue.addJob(exam.getExamId().toString(), exam1.getDuration() * 60000 + 30000);
-        if (!result) {
-            throw new RuntimeException("startExam: 添加考试任务失败");
-        }
-        examMapper.updateById(exam);
+        PaperCreater paperCreater = paperService.getPaperDetailById(exam1.getPaperId());
+//        redisDelayQueueUtil.addDelayQueue(exam1.getExamId(), paperCreater.getExamTime() * 60 + 30, TimeUnit.SECONDS, EXAM_DELAY_QUEUE);
+        redisDelayQueueUtil.addDelayQueue(exam1.getExamId(), 60, TimeUnit.SECONDS, EXAM_DELAY_QUEUE);
+        examMapper.updateById(exam1);
         cacheClient.setWithRandomExpire(
-                CACHE_EXAM_KEY+exam.getExamId(),
+                CACHE_EXAM_KEY+exam1.getExamId(),
                 exam1,
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
@@ -126,7 +125,7 @@ public class ExamServiceImpl implements ExamService {
             // 判断答案是否正确
             switch (question.getQuestionType()) {
                 case option:
-                    if (examDetail.getOption() == question.getRightOption()) {
+                    if (examDetail.getYourOption() == question.getRightOption()) {
                         examDetail.setRight(true);
                     } else {
                         examDetail.setRight(false);
@@ -166,8 +165,8 @@ public class ExamServiceImpl implements ExamService {
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
         );
-        List<Long> examIds = new ArrayList<>();
-        examIds.add(exam.getExamId());
+        Long[] examIds = new Long[1];
+        examIds[0] = exam.getExamId();
         examDetailMapper.deleteByExamIds(examIds);
         for (ExamDetail examDetail : examDetails) {
             examDetailMapper.insert(examDetail);
@@ -181,6 +180,8 @@ public class ExamServiceImpl implements ExamService {
                 CACHE_EXAMDETAIL_TTL,
                 TimeUnit.MINUTES
         );
+        //解除自动提交
+        redisDelayQueueUtil.deleteDelayQueue(EXAM_DELAY_QUEUE, exam.getExamId());
         return exam.getExamScore();
     }
 
@@ -231,8 +232,8 @@ public class ExamServiceImpl implements ExamService {
         ArrayList<ExamDetail> examDetails = ConvertUtil.mixExamDetails(oldExamDetail, newExamDetails);
 
         // 更新ExamDetail
-        List<Long> examIds = new ArrayList<>();
-        examIds.add(exam.getExamId());
+        Long[] examIds = new Long[1];
+        examIds[0] = exam.getExamId();
         examDetailMapper.deleteByExamIds(examIds);
         for (ExamDetail examDetail : examDetails) {
             examDetailMapper.insert(examDetail);
@@ -286,6 +287,16 @@ public class ExamServiceImpl implements ExamService {
                 .eq(status!=null,"status",status)
         );
         return new ArrayList<Exam>(exams);
+    }
+
+    @Override
+    public void deleteExams(List<Long> examIds) {
+        examMapper.deleteBatchIds(examIds);
+        examDetailMapper.deleteByExamIds(examIds.toArray(new Long[0]));
+        for (Long examId : examIds) {
+            cacheClient.delete(CACHE_EXAM_KEY+examId);
+            cacheClient.delete(CACHE_EXAMDETAIL_KEY+examId);
+        }
     }
 }
 

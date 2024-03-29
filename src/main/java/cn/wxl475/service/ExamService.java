@@ -20,4 +20,6 @@ public interface ExamService {
     ArrayList<Object> getExamDetail(Long examId);
 
     ArrayList<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize);
+
+    void deleteExams(List<Long> examIds);
 }

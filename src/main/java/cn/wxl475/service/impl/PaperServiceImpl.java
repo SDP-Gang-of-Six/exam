@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -184,6 +185,8 @@ public class PaperServiceImpl implements PaperService {
         return sum.equals(totalScore);
     }
 
+    //延时120分钟执行一次，之后销毁
+    @Scheduled
     private List<PaperScore> getPaperScoresByPaperId(Long paperId) {
         return paperScoreMapper.selectByPaperId(paperId);
     }

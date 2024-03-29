@@ -20,7 +20,7 @@ spring:
           group: DEFAULT_GROUP
           refresh: true
         extension-configs[3]:
-          data-id: redis.yaml
+          data-id: redisson.yaml
           group: DEFAULT_GROUP
           refresh: true
         extension-configs[4]:

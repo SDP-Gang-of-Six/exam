@@ -10,8 +10,8 @@ import java.util.List;
 
 @Mapper
 public interface ExamDetailMapper extends BaseMapper<ExamDetail> {
-    @Select("select * from exam.examDetail where exam_id = #{examId}")
+    @Select("select * from exam.examdetail where exam_id = #{examId}")
     List<ExamDetail> selectByExamId(Long examId);
 
-    void deleteByExamIds(List<Long> examIds);
+    void deleteByExamIds(Long[] examIds);
 }
