@@ -8,7 +8,7 @@ spring:
         refresh-enabled: true
         enabled: true
         extension-configs[0]:
-          data-id: exam.yaml
+          data-id: all.yaml
           group: DEFAULT_GROUP
           refresh: true
         extension-configs[1]:
