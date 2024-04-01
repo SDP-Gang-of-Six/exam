@@ -1,5 +1,6 @@
 package cn.wxl475.helper;
 
+import cn.wxl475.exception.ExamSolveException;
 import cn.wxl475.mapper.ExamDetailMapper;
 import cn.wxl475.mapper.ExamMapper;
 import cn.wxl475.mapper.QuestionMapper;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +26,7 @@ import static cn.wxl475.redis.RedisConstants.*;
 
 @Component
 @Slf4j
-public class ExamTimeout implements RedisDelayQueueHandle<Long> {
+public class examAutoSubmit implements RedisDelayQueueHandle<Long> {
 
 
     @Autowired
@@ -43,7 +43,7 @@ public class ExamTimeout implements RedisDelayQueueHandle<Long> {
 
     @Override
     public void execute(Long jobId) {
-        log.info("(收到超时订单延迟消息) {}", jobId);
+        log.info("(收到试卷提交延迟消息) {}", jobId);
         Long examId = jobId;
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
@@ -54,12 +54,21 @@ public class ExamTimeout implements RedisDelayQueueHandle<Long> {
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
         );
+        if (exam.isStatus()) {
+            throw new ExamSolveException("submitPaper: 试卷已经提交");
+        }
+
+        // 获取试卷信息
+        PaperCreater paperCreater = paperService.getPaperDetailById(exam.getPaperId());
+        HashMap<Long,Integer> ScoreMap = ConvertUtil.convertPaperCreaterToMap(paperCreater);
+
         exam.setSubmitTime(LocalDateTime.now());
-        if (exam.getSubmitTime().isAfter(exam.getStartTime().plusMinutes(exam.getDuration()+1))) {
-            throw new RuntimeException("submitPaper: 超过考试时间");
+        if (exam.getSubmitTime().isAfter(exam.getStartTime().plusMinutes(paperCreater.getExamTime()+2))) {
+            throw new ExamSolveException("submitPaper: 超过考试时间");
         }
         exam.setExamScore(0);
 
+        // 获取考试详情
         List<ExamDetail> examDetails = cacheClient.queryListWithPassThrough(
                 CACHE_EXAMDETAIL_KEY,
                 LOCK_EXAMDETAIL_KEY,
@@ -69,9 +78,6 @@ public class ExamTimeout implements RedisDelayQueueHandle<Long> {
                 CACHE_EXAMDETAIL_TTL,
                 TimeUnit.MINUTES
         );
-        // 获取试卷信息
-        PaperCreater paperCreater = paperService.getPaperDetailById(exam.getPaperId());
-        HashMap<Long,Integer> ScoreMap = ConvertUtil.convertPaperCreaterToMap(paperCreater);
 
         // 计算分数
         for (ExamDetail examDetail : examDetails) {

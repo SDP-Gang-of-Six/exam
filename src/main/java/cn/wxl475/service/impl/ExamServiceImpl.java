@@ -1,8 +1,10 @@
 package cn.wxl475.service.impl;
 
+import cn.wxl475.exception.ExamSolveException;
 import cn.wxl475.mapper.ExamDetailMapper;
 import cn.wxl475.mapper.ExamMapper;
 import cn.wxl475.mapper.QuestionMapper;
+import cn.wxl475.pojo.enums.RedisDelayQueueEnum;
 import cn.wxl475.pojo.exam.*;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.ExamService;
@@ -54,15 +56,14 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
         if (exam1.getStartTime() != null) {
-            throw new RuntimeException("startExam: 考试已经开始,请勿重复开始考试");
+            throw new ExamSolveException("startExam: 考试已经开始,请勿重复开始考试");
         }
         if (LocalDateTime.now().isAfter(exam1.getAllowEndTime()) || LocalDateTime.now().isBefore(exam1.getAllowStartTime())) {
-            throw new RuntimeException("startExam: 不在考试时间内");
+            throw new ExamSolveException("startExam: 不在考试时间内");
         }
         exam1.setStartTime(LocalDateTime.now());
         PaperCreater paperCreater = paperService.getPaperDetailById(exam1.getPaperId());
-//        redisDelayQueueUtil.addDelayQueue(exam1.getExamId(), paperCreater.getExamTime() * 60 + 30, TimeUnit.SECONDS, EXAM_DELAY_QUEUE);
-        redisDelayQueueUtil.addDelayQueue(exam1.getExamId(), 60, TimeUnit.SECONDS, EXAM_DELAY_QUEUE);
+        redisDelayQueueUtil.addDelayQueue(exam1.getExamId(), paperCreater.getExamTime() * 60 + 30, TimeUnit.SECONDS, RedisDelayQueueEnum.EXAM_AUTO_SUBMIT.getCode());
         examMapper.updateById(exam1);
         cacheClient.setWithRandomExpire(
                 CACHE_EXAM_KEY+exam1.getExamId(),
@@ -92,7 +93,7 @@ public class ExamServiceImpl implements ExamService {
 
         exam.setSubmitTime(LocalDateTime.now());
         if (exam.getSubmitTime().isAfter(exam.getStartTime().plusMinutes(paperCreater.getExamTime()+2))) {
-            throw new RuntimeException("submitPaper: 超过考试时间");
+            throw new ExamSolveException("submitPaper: 超过考试时间");
         }
         exam.setExamScore(0);
 
@@ -181,7 +182,7 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
         //解除自动提交
-        redisDelayQueueUtil.deleteDelayQueue(EXAM_DELAY_QUEUE, exam.getExamId());
+        redisDelayQueueUtil.deleteDelayQueue(RedisDelayQueueEnum.EXAM_AUTO_SUBMIT.getCode(), exam.getExamId());
         return exam.getExamScore();
     }
 
@@ -214,7 +215,7 @@ public class ExamServiceImpl implements ExamService {
         );
         // 如果考试已经结束，不允许修改
         if (exam.isStatus()==true) {
-            throw new RuntimeException("submitPaper: 考试已经结束，不允许修改");
+            throw new ExamSolveException("submitPaper: 考试已经结束，不允许修改");
         }
 
         ArrayList<ExamDetail> newExamDetails = ConvertUtil.convertExamCreatersToExamDetails(examCreater);
