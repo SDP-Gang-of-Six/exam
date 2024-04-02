@@ -37,7 +37,11 @@ public class RedisDelayQueueRunner implements CommandLineRunner {
                         Object value = redisDelayQueueUtil.getDelayQueue(queueEnum.getCode());
                         if (value != null) {
                             RedisDelayQueueHandle redisDelayQueueHandle = SpringUtil.getBean(queueEnum.getBeanId());
-                            redisDelayQueueHandle.execute(value);
+                            try {
+                                redisDelayQueueHandle.execute(value);
+                            }catch (Exception e) {
+                                log.error("(Redis延迟队列执行异常) {}", e.getMessage());
+                            }
                         }
                     }
                 } catch (InterruptedException e) {

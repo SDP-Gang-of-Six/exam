@@ -4,11 +4,14 @@ import cn.wxl475.pojo.exam.Exam;
 import cn.wxl475.pojo.exam.ExamCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.ExamService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/exam")
 public class ExamController {
@@ -18,7 +21,14 @@ public class ExamController {
 
     @PostMapping("/startExam")
     public Result startExam(@RequestBody Exam exam) {
-        return Result.success(examService.startExam(exam));
+        Long examId;
+        try {
+            examId = examService.startExam(exam);
+        } catch (Exception e) {
+            log.info(Arrays.toString(e.getStackTrace()));
+            return Result.error(e.getMessage());
+        }
+        return Result.success(examId);
     }
     @PostMapping("/setExam")
     public Result setExam(@RequestBody Exam exam) {
@@ -30,12 +40,24 @@ public class ExamController {
     }
     @PostMapping("/saveExam")
     public Result saveExam(@RequestBody ExamCreater examCreater) {
-        examService.saveExam(examCreater);
+        try {
+            examService.saveExam(examCreater);
+        } catch (Exception e) {
+            log.info(Arrays.toString(e.getStackTrace()));
+            return Result.error(e.getMessage());
+        }
         return Result.success();
     }
     @PostMapping("/submitPaper")
     public Result submitPaper(@RequestBody ExamCreater examCreater) {
-        return Result.success(examService.submitPaper(examCreater));
+        Integer score;
+        try {
+            score = examService.submitPaper(examCreater);
+        } catch (Exception e) {
+            log.info(Arrays.toString(e.getStackTrace()));
+            return Result.error(e.getMessage());
+        }
+        return Result.success(score);
     }
     @GetMapping("/getExamDetail")
     public Result getExamDetail(@RequestParam("examId") Long examId) {
