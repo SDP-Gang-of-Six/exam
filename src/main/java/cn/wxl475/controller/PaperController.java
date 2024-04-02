@@ -3,12 +3,15 @@ package cn.wxl475.controller;
 import cn.wxl475.pojo.exam.PaperCreater;
 import cn.wxl475.pojo.Result;
 import cn.wxl475.service.PaperService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/exam")
 public class PaperController {
@@ -32,9 +35,12 @@ public class PaperController {
     }
     @PostMapping("/updatePaper")
     public Result updatePaper(@RequestBody PaperCreater paperCreater) {
-        Long paperId = paperService.updatePaper(paperCreater);
-        if (paperId.equals(-1L)) {
-            return Result.error("updatePaper: 试卷总分与题目分数不符");
+        Long paperId;
+        try {
+            paperId = paperService.updatePaper(paperCreater);
+        } catch (Exception e) {
+            log.info(Arrays.toString(e.getStackTrace()));
+            return Result.error(e.getMessage());
         }
         return Result.success(paperId);
     }
