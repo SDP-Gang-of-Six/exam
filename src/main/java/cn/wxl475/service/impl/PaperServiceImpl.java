@@ -67,7 +67,7 @@ public class PaperServiceImpl implements PaperService {
         paperScoreMapper.deleteByPaperIds(arrayList.toArray(new Long[0]));
         for (Long id : arrayList) {
             cacheClient.delete(CACHE_PAPER_KEY + id);
-            cacheClient.delete(CACHE_PAPERSCORE_KEY + id);
+            cacheClient.delete(CACHE_PAPER_SCORE_KEY + id);
         }
     }
 
@@ -102,12 +102,12 @@ public class PaperServiceImpl implements PaperService {
                 paperScoreMapper.insert(paperScore);
             }
             cacheClient.resetKey(
-                    CACHE_PAPERSCORE_KEY,
-                    LOCK_PAPERSCORE_KEY,
+                    CACHE_PAPER_SCORE_KEY,
+                    LOCK_PAPER_SCORE_KEY,
                     paper.getPaperId(),
                     List.class,
                     id -> getPaperScoresByPaperId(paper.getPaperId()),
-                    CACHE_PAPERSCORE_TTL,
+                    CACHE_PAPER_SCORE_TTL,
                     TimeUnit.MINUTES
             );
         }
@@ -140,12 +140,12 @@ public class PaperServiceImpl implements PaperService {
                 TimeUnit.MINUTES
         );
         List<PaperScore> paperScores = cacheClient.queryListWithPassThrough(
-                CACHE_PAPERSCORE_KEY,
-                LOCK_PAPERSCORE_KEY,
+                CACHE_PAPER_SCORE_KEY,
+                LOCK_PAPER_SCORE_KEY,
                 paperId,
                 PaperScore.class,
                 id -> getPaperScoresByPaperId(paperId),
-                CACHE_PAPERSCORE_TTL,
+                CACHE_PAPER_SCORE_TTL,
                 TimeUnit.MINUTES
         );
         return ConvertUtil.convertPaperToPaperCreater(paper, (ArrayList<PaperScore>) paperScores);

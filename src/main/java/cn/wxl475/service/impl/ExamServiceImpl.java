@@ -100,12 +100,12 @@ public class ExamServiceImpl implements ExamService {
         ArrayList<ExamDetail> newExamDetails = ConvertUtil.convertExamCreatersToExamDetails(examCreater);
         // 从缓存中获取旧的ExamDetail
         List<ExamDetail> oldExamDetail = cacheClient.queryListWithPassThrough(
-                CACHE_EXAMDETAIL_KEY,
-                LOCK_EXAMDETAIL_KEY,
+                CACHE_EXAM_DETAIL_KEY,
+                LOCK_EXAM_DETAIL_KEY,
                 exam.getExamId(),
                 ExamDetail.class,
                 id -> examDetailMapper.selectByExamId(exam.getExamId()),
-                CACHE_EXAMDETAIL_TTL,
+                CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
         // 混合新旧ExamDetail
@@ -173,12 +173,12 @@ public class ExamServiceImpl implements ExamService {
             examDetailMapper.insert(examDetail);
         }
         cacheClient.resetKey(
-                CACHE_EXAMDETAIL_KEY,
-                LOCK_EXAMDETAIL_KEY,
+                CACHE_EXAM_DETAIL_KEY,
+                LOCK_EXAM_DETAIL_KEY,
                 exam.getExamId(),
                 List.class,
                 id -> examDetailMapper.selectByExamId(exam.getExamId()),
-                CACHE_EXAMDETAIL_TTL,
+                CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
         //解除自动提交
@@ -221,12 +221,12 @@ public class ExamServiceImpl implements ExamService {
         ArrayList<ExamDetail> newExamDetails = ConvertUtil.convertExamCreatersToExamDetails(examCreater);
         // 从缓存中获取旧的ExamDetail
         List<ExamDetail> oldExamDetail = cacheClient.queryListWithPassThrough(
-                CACHE_EXAMDETAIL_KEY,
-                LOCK_EXAMDETAIL_KEY,
+                CACHE_EXAM_DETAIL_KEY,
+                LOCK_EXAM_DETAIL_KEY,
                 exam.getExamId(),
                 ExamDetail.class,
                 id -> examDetailMapper.selectByExamId(exam.getExamId()),
-                CACHE_EXAMDETAIL_TTL,
+                CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
         // 混合新旧ExamDetail
@@ -240,12 +240,12 @@ public class ExamServiceImpl implements ExamService {
             examDetailMapper.insert(examDetail);
         }
         cacheClient.resetKey(
-                CACHE_EXAMDETAIL_KEY,
-                LOCK_EXAMDETAIL_KEY,
+                CACHE_EXAM_DETAIL_KEY,
+                LOCK_EXAM_DETAIL_KEY,
                 exam.getExamId(),
                 List.class,
                 id -> examDetailMapper.selectByExamId(exam.getExamId()),
-                CACHE_EXAMDETAIL_TTL,
+                CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
 
@@ -264,12 +264,12 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
         List<ExamDetail> ExamDetail = cacheClient.queryListWithPassThrough(
-                CACHE_EXAMDETAIL_KEY,
-                LOCK_EXAMDETAIL_KEY,
+                CACHE_EXAM_DETAIL_KEY,
+                LOCK_EXAM_DETAIL_KEY,
                 examId,
                 ExamDetail.class,
                 id -> examDetailMapper.selectByExamId(examId),
-                CACHE_EXAMDETAIL_TTL,
+                CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
         ArrayList<Object> result = new ArrayList<>();
@@ -296,7 +296,7 @@ public class ExamServiceImpl implements ExamService {
         examDetailMapper.deleteByExamIds(examIds.toArray(new Long[0]));
         for (Long examId : examIds) {
             cacheClient.delete(CACHE_EXAM_KEY+examId);
-            cacheClient.delete(CACHE_EXAMDETAIL_KEY+examId);
+            cacheClient.delete(CACHE_EXAM_DETAIL_KEY +examId);
         }
     }
 }
