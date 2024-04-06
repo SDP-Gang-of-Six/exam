@@ -280,14 +280,19 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     @DS("slave")
-    public ArrayList<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
+    public cn.wxl475.pojo.Page<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
         IPage<Exam> page=new Page<>(pageNum,pageSize);
-        List<Exam> exams = examMapper.selectList(page, new QueryWrapper<Exam>()
+        ArrayList<Exam> exams = (ArrayList<Exam>) examMapper.selectList(page, new QueryWrapper<Exam>()
                 .eq(userId!=null,"user_id",userId)
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
-        return new ArrayList<Exam>(exams);
+        Long total = examMapper.selectCount(new QueryWrapper<Exam>()
+                .eq(userId!=null,"user_id",userId)
+                .eq(paperId!=null,"paper_id",paperId)
+                .eq(status!=null,"status",status)
+        );
+        return new cn.wxl475.pojo.Page<>(total,exams);
     }
 
     @Override

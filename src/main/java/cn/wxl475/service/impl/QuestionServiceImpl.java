@@ -1,6 +1,7 @@
 package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.QuestionMapper;
+import cn.wxl475.pojo.Page;
 import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.pojo.enums.QuestionType;
 import cn.wxl475.redis.CacheClient;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
@@ -36,6 +38,9 @@ public class QuestionServiceImpl implements QuestionService {
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
     @Autowired
     private QuestionEsRepo questionEsRepo;
+    @Autowired
+    private RedissonClient redisson;
+
 
     @Override
     public Long createQuestion(Question question) {
@@ -85,7 +90,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @DS("slave")
-    public List<Question> getQuestions(String allField, String tag, QuestionType questionType, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
+    public Page<Question> getQuestions(String allField, String tag, QuestionType questionType, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder().withPageable(PageRequest.of(pageNum-1, pageSize));
         if(allField!=null&& !allField.isEmpty()){
             queryBuilder.withQuery(QueryBuilders.multiMatchQuery(allField,"description","optionA","optionB","optionC","optionD","right_blank","questionType","createTime","updateTime"));
@@ -104,9 +109,16 @@ public class QuestionServiceImpl implements QuestionService {
         }
         queryBuilder.withSorts(SortBuilders.fieldSort(sortField).order(sortOrder==-1? SortOrder.DESC:SortOrder.ASC));
         SearchHits<Question> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Question.class);
-        List<Question> questions = new ArrayList<>();
+        Long total = hits.getTotalHits();
+        ArrayList<Question> questions = new ArrayList<>();
         hits.forEach(question -> questions.add(question.getContent()));
-        return questions;
+        return new Page<Question>(total, questions);
     }
 
+//    public Boolean LockQuestions(List<Question> questions) {
+//        for (Question question : questions) {
+//            redisson.getLock(LOCK_QUESTION_KEY + question.getQuestionId(), question, LOCK_QUESTION_TTL, TimeUnit.MINUTES);
+//        }
+//        return true;
+//    }
 }

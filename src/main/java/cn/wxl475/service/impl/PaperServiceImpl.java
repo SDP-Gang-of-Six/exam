@@ -2,6 +2,7 @@ package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.PaperMapper;
 import cn.wxl475.mapper.PaperScoreMapper;
+import cn.wxl475.pojo.Page;
 import cn.wxl475.pojo.exam.Paper;
 import cn.wxl475.pojo.exam.PaperCreater;
 import cn.wxl475.pojo.exam.PaperScore;
@@ -152,7 +153,7 @@ public class PaperServiceImpl implements PaperService {
     }
 
     @Override
-    public List<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
+    public Page<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder().withPageable(PageRequest.of(pageNum-1, pageSize));
         if(allField!=null&& !allField.isEmpty()){
             queryBuilder.withQuery(QueryBuilders.multiMatchQuery(allField,"paperName","paperDescription","createTime","updateTime"));
@@ -171,9 +172,9 @@ public class PaperServiceImpl implements PaperService {
         }
         queryBuilder.withSorts(SortBuilders.fieldSort(sortField).order(sortOrder==-1? SortOrder.DESC:SortOrder.ASC));
         SearchHits<Paper> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Paper.class);
-        List<Paper> papers = new ArrayList<>();
+        ArrayList<Paper> papers = new ArrayList<>();
         hits.forEach(paper -> papers.add(paper.getContent()));
-        return papers;
+        return new Page<Paper>(hits.getTotalHits(), papers);
     }
 
 
@@ -185,8 +186,6 @@ public class PaperServiceImpl implements PaperService {
         return sum.equals(totalScore);
     }
 
-    //延时120分钟执行一次，之后销毁
-    @Scheduled
     private List<PaperScore> getPaperScoresByPaperId(Long paperId) {
         return paperScoreMapper.selectByPaperId(paperId);
     }

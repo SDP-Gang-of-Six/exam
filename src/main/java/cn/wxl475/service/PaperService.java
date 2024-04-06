@@ -1,10 +1,10 @@
 package cn.wxl475.service;
 
+import cn.wxl475.pojo.Page;
 import cn.wxl475.pojo.exam.Paper;
 import cn.wxl475.pojo.exam.PaperCreater;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public interface PaperService {
     Long createPaper(PaperCreater paperCreater);
@@ -17,5 +17,5 @@ public interface PaperService {
 
     PaperCreater getPaperDetailById(Long paperId);
 
-    List<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder);
+    Page<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder);
 }

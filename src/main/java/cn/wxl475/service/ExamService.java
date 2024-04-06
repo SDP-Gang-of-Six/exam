@@ -1,5 +1,6 @@
 package cn.wxl475.service;
 
+import cn.wxl475.pojo.Page;
 import cn.wxl475.pojo.exam.Exam;
 import cn.wxl475.pojo.exam.ExamCreater;
 
@@ -19,7 +20,7 @@ public interface ExamService {
 
     ArrayList<Object> getExamDetail(Long examId);
 
-    ArrayList<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize);
+    Page<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize);
 
     void deleteExams(List<Long> examIds);
 }
