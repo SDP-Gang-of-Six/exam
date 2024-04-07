@@ -9,9 +9,11 @@ import cn.wxl475.repo.QuestionEsRepo;
 import cn.wxl475.service.QuestionService;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -92,20 +94,25 @@ public class QuestionServiceImpl implements QuestionService {
     @DS("slave")
     public Page<Question> getQuestions(String allField, String tag, QuestionType questionType, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder().withPageable(PageRequest.of(pageNum-1, pageSize));
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         if(allField!=null&& !allField.isEmpty()){
-            queryBuilder.withQuery(QueryBuilders.multiMatchQuery(allField,"description","optionA","optionB","optionC","optionD","right_blank","questionType","createTime","updateTime"));
+            boolQueryBuilder.must(QueryBuilders.multiMatchQuery(allField,"description","optionA","optionB","optionC","optionD","right_blank","questionType","createTime","updateTime"));
         }
+        List<QueryBuilders> queryBuilders = new ArrayList<>();
         if(tag!=null && !tag.isEmpty()){
-            queryBuilder.withQuery(QueryBuilders.termQuery("tag",tag));
+            boolQueryBuilder.filter(QueryBuilders.termQuery("tag",tag));
         }
         if(questionType!=null){
-            queryBuilder.withQuery(QueryBuilders.termQuery("questionType",questionType.toString()));
+            boolQueryBuilder.filter(QueryBuilders.termQuery("questionType",questionType.toString()));
         }
         if(sortField==null || sortField.isEmpty()){
             sortField = "questionId";
         }
         if(sortOrder==null || !(sortOrder==1 || sortOrder==-1)){
             sortOrder=-1;
+        }
+        if (boolQueryBuilder.hasClauses()) {
+            queryBuilder.withQuery(boolQueryBuilder);
         }
         queryBuilder.withSorts(SortBuilders.fieldSort(sortField).order(sortOrder==-1? SortOrder.DESC:SortOrder.ASC));
         SearchHits<Question> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Question.class);
@@ -115,9 +122,10 @@ public class QuestionServiceImpl implements QuestionService {
         return new Page<Question>(total, questions);
     }
 
-//    public Boolean LockQuestions(List<Question> questions) {
+//    public Boolean LockQuestions(ArrayList<Question> questions) {
 //        for (Question question : questions) {
-//            redisson.getLock(LOCK_QUESTION_KEY + question.getQuestionId(), question, LOCK_QUESTION_TTL, TimeUnit.MINUTES);
+//            RLock lock = redisson.getLock(LOCK_QUESTION_KEY + question.getQuestionId());
+//            lock.
 //        }
 //        return true;
 //    }

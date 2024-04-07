@@ -12,6 +12,7 @@ import cn.wxl475.repo.PaperEsRepo;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -20,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -155,20 +155,24 @@ public class PaperServiceImpl implements PaperService {
     @Override
     public Page<Paper> getPapers(String allField, Integer examTime, Integer totalScore, Integer pageNum, Integer pageSize, String sortField, Integer sortOrder) {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder().withPageable(PageRequest.of(pageNum-1, pageSize));
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         if(allField!=null&& !allField.isEmpty()){
-            queryBuilder.withQuery(QueryBuilders.multiMatchQuery(allField,"paperName","paperDescription","createTime","updateTime"));
+            boolQueryBuilder.must(QueryBuilders.multiMatchQuery(allField,"paperName","paperDescription","createTime","updateTime"));
         }
         if(examTime!=null){
-            queryBuilder.withQuery(QueryBuilders.matchQuery("examTime", examTime));
+            boolQueryBuilder.filter(QueryBuilders.matchQuery("examTime", examTime));
         }
         if(totalScore!=null){
-            queryBuilder.withQuery(QueryBuilders.matchQuery("totalScore",totalScore));
+            boolQueryBuilder.filter(QueryBuilders.matchQuery("totalScore",totalScore));
         }
         if(sortField==null || sortField.isEmpty()){
             sortField = "paperId";
         }
         if(sortOrder==null || !(sortOrder==1 || sortOrder==-1)){
             sortOrder=-1;
+        }
+        if (boolQueryBuilder.hasClauses()) {
+            queryBuilder.withQuery(boolQueryBuilder);
         }
         queryBuilder.withSorts(SortBuilders.fieldSort(sortField).order(sortOrder==-1? SortOrder.DESC:SortOrder.ASC));
         SearchHits<Paper> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Paper.class);
