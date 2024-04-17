@@ -19,6 +19,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.lucene.store.SleepingLockWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static cn.wxl475.redis.RedisConstants.*;
@@ -210,12 +212,17 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    @Transactional
     public ArrayList<Long> setExamsForUsers(ExamsWithUserId exams) {
         ArrayList<Long> ids = new ArrayList<>();
-        Exam e = exams.getExam();
+        Exam e = new Exam();
+        e.setPaperId(exams.getPaperId());
+        e.setAllowStartTime(exams.getAllowStartTime());
+        e.setAllowEndTime(exams.getAllowEndTime());
         for (Long id : exams.getUserIds()) {
             e.setUserId(id);
             examMapper.insert(e);
+            e.setExamId(e.getExamId()+1);
             ids.add(e.getExamId());
         }
         return ids;
@@ -307,13 +314,22 @@ public class ExamServiceImpl implements ExamService {
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
+        CountDownLatch countDownLatch=ThreadUtil.newCountDownLatch(exams.size());
 
         for (Exam exam : exams) {
             ThreadUtil.execAsync(()->{
-                String nickname = userClient.getNicknameById(exam.getUserId()).getData().toString();
-                Paper paper = paperService.getPaperById(exam.getPaperId());
-                ExamOut examOut = new ExamOut(exam, paper, null, nickname);
-                examOuts.add(examOut);
+                ExamOut examOut = new ExamOut();
+                examOut.setExam(exam);
+                try {
+                    examOut.setPaper(paperService.getPaperById(exam.getPaperId()));
+                    examOut.setNickname(userClient.getNicknameById(exam.getUserId()).getData().toString());
+                    examOuts.add(examOut);
+                } catch (Exception e) {
+                    examOuts.add(examOut);
+                    e.printStackTrace();
+                }finally {
+                    countDownLatch.countDown();
+                }
             });
         }
 
@@ -322,6 +338,12 @@ public class ExamServiceImpl implements ExamService {
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         return new cn.wxl475.pojo.Page<>(total,examOuts);
     }
