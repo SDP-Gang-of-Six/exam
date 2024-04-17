@@ -3,6 +3,7 @@ package cn.wxl475.controller;
 import cn.wxl475.pojo.exam.Exam;
 import cn.wxl475.pojo.exam.ExamCreater;
 import cn.wxl475.pojo.Result;
+import cn.wxl475.pojo.exam.ExamsWithUserId;
 import cn.wxl475.service.ExamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,11 @@ public class ExamController {
     public Result setExams(@RequestBody List<Exam> exams) {
         return Result.success(examService.setExams(exams));
     }
+    @PostMapping("/setExamsForUsers")
+    public Result setExamsForUsers(@RequestBody ExamsWithUserId exams) {
+        return Result.success(examService.setExamsForUsers(exams));
+    }
+
     @PostMapping("/saveExam")
     public Result saveExam(@RequestBody ExamCreater examCreater) {
         try {

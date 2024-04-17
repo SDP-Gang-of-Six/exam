@@ -1,5 +1,9 @@
 package cn.wxl475.service.impl;
 
+import cn.hutool.core.thread.ThreadUtil;
+import cn.wxl475.client.DataClient;
+import cn.wxl475.client.UserClient;
+import cn.wxl475.config.DefaultFeignConfiguration;
 import cn.wxl475.exception.ExamSolveException;
 import cn.wxl475.mapper.ExamDetailMapper;
 import cn.wxl475.mapper.ExamMapper;
@@ -16,6 +20,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +48,8 @@ public class ExamServiceImpl implements ExamService {
     private QuestionMapper questionMapper;
     @Autowired
     private PaperService paperService;
+    @Autowired
+    private UserClient userClient;
 
     @Override
     public Long startExam(Exam exam) {
@@ -203,6 +210,18 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    public ArrayList<Long> setExamsForUsers(ExamsWithUserId exams) {
+        ArrayList<Long> ids = new ArrayList<>();
+        Exam e = exams.getExam();
+        for (Long id : exams.getUserIds()) {
+            e.setUserId(id);
+            examMapper.insert(e);
+            ids.add(e.getExamId());
+        }
+        return ids;
+    }
+
+    @Override
     public void saveExam(ExamCreater examCreater) {
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
@@ -280,19 +299,31 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     @DS("slave")
-    public cn.wxl475.pojo.Page<Exam> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
+    public cn.wxl475.pojo.Page<ExamOut> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
         IPage<Exam> page=new Page<>(pageNum,pageSize);
+        ArrayList<ExamOut> examOuts = new ArrayList<>();
         ArrayList<Exam> exams = (ArrayList<Exam>) examMapper.selectList(page, new QueryWrapper<Exam>()
                 .eq(userId!=null,"user_id",userId)
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
+
+        for (Exam exam : exams) {
+            ThreadUtil.execAsync(()->{
+                String nickname = userClient.getNicknameById(exam.getUserId()).getData().toString();
+                Paper paper = paperService.getPaperById(exam.getPaperId());
+                ExamOut examOut = new ExamOut(exam, paper, null, nickname);
+                examOuts.add(examOut);
+            });
+        }
+
         Long total = examMapper.selectCount(new QueryWrapper<Exam>()
                 .eq(userId!=null,"user_id",userId)
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
-        return new cn.wxl475.pojo.Page<>(total,exams);
+
+        return new cn.wxl475.pojo.Page<>(total,examOuts);
     }
 
     @Override
