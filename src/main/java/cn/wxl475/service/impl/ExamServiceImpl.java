@@ -20,6 +20,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.store.SleepingLockWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import static cn.wxl475.redis.RedisConstants.*;
 
 @Service
+@Slf4j
 public class ExamServiceImpl implements ExamService {
 
     @Autowired
@@ -344,7 +346,13 @@ public class ExamServiceImpl implements ExamService {
             ExamOut examOut = new ExamOut();
             examOut.setExam(exam);
             examOut.setPaper(paperService.getPaperById(exam.getPaperId()));
-            examOut.setNickname(userClient.getNicknameById(exam.getUserId()).getData().toString());
+            try {
+                String str = userClient.getNicknameById(exam.getUserId()).getData().toString();
+                examOut.setNickname(str);
+            }catch (Exception e) {
+                log.info("getExams: 用户不存在");
+                examOut.setNickname("用户不存在");
+            }
             examOuts.add(examOut);
         }
         Long total = examIPage.getTotal();
