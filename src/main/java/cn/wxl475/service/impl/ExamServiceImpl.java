@@ -339,31 +339,15 @@ public class ExamServiceImpl implements ExamService {
                 .eq(status!=null,"status",status)
         );
         ArrayList<Exam> exams = new ArrayList<>(examIPage.getRecords());
-        CountDownLatch countDownLatch=ThreadUtil.newCountDownLatch(exams.size());
 
         for (Exam exam : exams) {
-            ThreadUtil.execAsync(()->{
-                ExamOut examOut = new ExamOut();
-                examOut.setExam(exam);
-                try {
-                    examOut.setPaper(paperService.getPaperById(exam.getPaperId()));
-                    examOut.setNickname(userClient.getNicknameById(exam.getUserId()).getData().toString());
-                    examOuts.add(examOut);
-                } catch (Exception e) {
-                    examOuts.add(examOut);
-                    e.printStackTrace();
-                }finally {
-                    countDownLatch.countDown();
-                }
-            });
+            ExamOut examOut = new ExamOut();
+            examOut.setExam(exam);
+            examOut.setPaper(paperService.getPaperById(exam.getPaperId()));
+            examOut.setNickname(userClient.getNicknameById(exam.getUserId()).getData().toString());
+            examOuts.add(examOut);
         }
         Long total = examIPage.getTotal();
-
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         return new cn.wxl475.pojo.Page<>(total,examOuts);
     }
