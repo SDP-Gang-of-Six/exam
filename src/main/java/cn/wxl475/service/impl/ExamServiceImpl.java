@@ -13,6 +13,7 @@ import cn.wxl475.pojo.exam.*;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.service.ExamService;
 import cn.wxl475.service.PaperService;
+import cn.wxl475.service.QuestionService;
 import cn.wxl475.utils.ConvertUtil;
 import cn.wxl475.utils.RedisDelayQueueUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
@@ -52,6 +53,8 @@ public class ExamServiceImpl implements ExamService {
     private PaperService paperService;
     @Autowired
     private UserClient userClient;
+    @Autowired
+    private QuestionService questionService;
 
     @Override
     public Long startExam(Exam exam) {
@@ -279,7 +282,7 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     @DS("slave")
-    public ArrayList<Object> getExamDetail(Long examId) {
+    public ExamOut getExamDetail(Long examId) {
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
                 LOCK_EXAM_KEY,
@@ -298,10 +301,31 @@ public class ExamServiceImpl implements ExamService {
                 CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
-        ArrayList<Object> result = new ArrayList<>();
-        result.add(exam);
-        result.add(ExamDetail);
-        return result;
+        ExamOut examOut = new ExamOut();
+        examOut.setExam(exam);
+        examOut.setExamDetails(ExamDetail);
+        CountDownLatch countDownLatch = ThreadUtil.newCountDownLatch(1);
+        ArrayList<PaperCreater> paperCreaters = new ArrayList<>();
+        ThreadUtil.execAsync(()->{
+            paperCreaters.add(paperService.getPaperDetailById(exam.getPaperId()));
+            examOut.setPaper(ConvertUtil.convertPaperCreaterToPaper(paperCreaters.get(0)));
+            countDownLatch.countDown();
+        });
+        ThreadUtil.execAsync(()->{
+            examOut.setNickname(userClient.getNicknameById(exam.getUserId()).getData().toString());
+            countDownLatch.countDown();
+        });
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        examOut.setQuestionOuts(new ArrayList<>());
+        for(int i = 0; i < paperCreaters.get(0).getPaperScores().size(); i++) {
+            Question question = questionService.getQuestionById(paperCreaters.get(0).getPaperScores().get(i).getQuestionId());
+            examOut.getQuestionOuts().add(ConvertUtil.convertQuestionToQuestionOut(question, paperCreaters.get(0).getPaperScores().get(i).getScore()));
+        }
+        return examOut;
     }
 
     @Override

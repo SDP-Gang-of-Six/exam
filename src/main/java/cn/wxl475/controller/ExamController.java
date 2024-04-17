@@ -41,8 +41,6 @@ public class ExamController {
     }
     @PostMapping("/setExamsForUsers")
     public Result setExamsForUsers(@RequestBody ExamsWithUserId exams) {
-        log.info(exams.toString());
-        log.info(exams.getUserIds().toString());
         return Result.success(examService.setExamsForUsers(exams));
     }
 

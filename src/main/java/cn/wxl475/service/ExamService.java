@@ -20,7 +20,7 @@ public interface ExamService {
 
     void saveExam(ExamCreater examCreater);
 
-    ArrayList<Object> getExamDetail(Long examId);
+    ExamOut getExamDetail(Long examId);
 
     Page<ExamOut> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize);
 
