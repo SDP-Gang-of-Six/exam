@@ -304,7 +304,7 @@ public class ExamServiceImpl implements ExamService {
         ExamOut examOut = new ExamOut();
         examOut.setExam(exam);
         examOut.setExamDetails(ExamDetail);
-        CountDownLatch countDownLatch = ThreadUtil.newCountDownLatch(1);
+        CountDownLatch countDownLatch = ThreadUtil.newCountDownLatch(2);
         ArrayList<PaperCreater> paperCreaters = new ArrayList<>();
         ThreadUtil.execAsync(()->{
             paperCreaters.add(paperService.getPaperDetailById(exam.getPaperId()));
