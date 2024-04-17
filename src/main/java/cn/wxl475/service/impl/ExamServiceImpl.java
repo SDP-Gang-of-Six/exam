@@ -331,13 +331,14 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @DS("slave")
     public cn.wxl475.pojo.Page<ExamOut> getExams(Long userId, Long paperId, Boolean status, Integer pageNum, Integer pageSize) {
-        IPage<Exam> page=new Page<>(pageNum,pageSize);
+        Page<Exam> page = new Page<>( pageNum, pageSize, true);
         ArrayList<ExamOut> examOuts = new ArrayList<>();
-        ArrayList<Exam> exams = (ArrayList<Exam>) examMapper.selectList(page, new QueryWrapper<Exam>()
+        IPage<Exam> examIPage = examMapper.selectPage(page, new QueryWrapper<Exam>()
                 .eq(userId!=null,"user_id",userId)
                 .eq(paperId!=null,"paper_id",paperId)
                 .eq(status!=null,"status",status)
         );
+        ArrayList<Exam> exams = new ArrayList<>(examIPage.getRecords());
         CountDownLatch countDownLatch=ThreadUtil.newCountDownLatch(exams.size());
 
         for (Exam exam : exams) {
@@ -356,12 +357,7 @@ public class ExamServiceImpl implements ExamService {
                 }
             });
         }
-
-        Long total = examMapper.selectCount(new QueryWrapper<Exam>()
-                .eq(userId!=null,"user_id",userId)
-                .eq(paperId!=null,"paper_id",paperId)
-                .eq(status!=null,"status",status)
-        );
+        Long total = examIPage.getTotal();
 
         try {
             countDownLatch.await();
