@@ -147,7 +147,7 @@ public class ExamServiceImpl implements ExamService {
                     }
                     break;
                 case judge:
-                    if (examDetail.isJudge() == question.isRightJudge()) {
+                    if (examDetail.getJudge() == question.isRightJudge()) {
                         examDetail.setRight(true);
                     } else {
                         examDetail.setRight(false);
@@ -294,7 +294,7 @@ public class ExamServiceImpl implements ExamService {
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
         );
-        List<ExamDetail> ExamDetail = cacheClient.queryListWithPassThrough(
+        List<ExamDetail> ExamDetails = cacheClient.queryListWithPassThrough(
                 CACHE_EXAM_DETAIL_KEY,
                 LOCK_EXAM_DETAIL_KEY,
                 examId,
@@ -303,9 +303,13 @@ public class ExamServiceImpl implements ExamService {
                 CACHE_EXAM_DETAIL_TTL,
                 TimeUnit.MINUTES
         );
+        HashMap<String,ExamDetail> map = new HashMap<>();
+        for (ExamDetail examDetail : ExamDetails) {
+            map.put(examDetail.getQuestionId().toString(),examDetail);
+        }
         ExamOut examOut = new ExamOut();
         examOut.setExam(exam);
-        examOut.setExamDetails(ExamDetail);
+        examOut.setExamDetails(ExamDetails);
         CountDownLatch countDownLatch = ThreadUtil.newCountDownLatch(2);
         ArrayList<PaperCreater> paperCreaters = new ArrayList<>();
         ThreadUtil.execAsync(()->{
@@ -326,6 +330,12 @@ public class ExamServiceImpl implements ExamService {
         for(int i = 0; i < paperCreaters.get(0).getPaperScores().size(); i++) {
             Question question = questionService.getQuestionById(paperCreaters.get(0).getPaperScores().get(i).getQuestionId());
             examOut.getQuestionOuts().add(ConvertUtil.convertQuestionToQuestionOut(question, paperCreaters.get(0).getPaperScores().get(i).getScore()));
+            if (map.containsKey(question.getQuestionId().toString())) {
+                ExamDetail examDetail = map.get(question.getQuestionId().toString());
+                examOut.getQuestionOuts().get(i).setYourOption(examDetail.getYourOption().toString());
+                examOut.getQuestionOuts().get(i).setJudge(examDetail.getJudge());
+                examOut.getQuestionOuts().get(i).setBlank(examDetail.getBlank());
+            }
         }
         return examOut;
     }
