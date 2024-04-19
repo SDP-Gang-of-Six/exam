@@ -101,7 +101,7 @@ public class examAutoSubmit implements RedisDelayQueueHandle<Long> {
                     }
                     break;
                 case judge:
-                    if (examDetail.isJudge() == question.isRightJudge()) {
+                    if (examDetail.getJudge() == question.isRightJudge()) {
                         examDetail.setRight(true);
                     } else {
                         examDetail.setRight(false);
