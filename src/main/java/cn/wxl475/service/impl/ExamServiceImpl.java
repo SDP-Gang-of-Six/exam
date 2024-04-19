@@ -332,9 +332,15 @@ public class ExamServiceImpl implements ExamService {
             examOut.getQuestionOuts().add(ConvertUtil.convertQuestionToQuestionOut(question, paperCreaters.get(0).getPaperScores().get(i).getScore()));
             if (map.containsKey(question.getQuestionId().toString())) {
                 ExamDetail examDetail = map.get(question.getQuestionId().toString());
-                examOut.getQuestionOuts().get(i).setYourOption(examDetail.getYourOption().toString());
-                examOut.getQuestionOuts().get(i).setJudge(examDetail.getJudge());
-                examOut.getQuestionOuts().get(i).setBlank(examDetail.getBlank());
+                if (examDetail.getYourOption() != null){
+                    examOut.getQuestionOuts().get(i).setYourOption(examDetail.getYourOption().toString());
+                }
+                if (examDetail.getJudge() != null){
+                    examOut.getQuestionOuts().get(i).setJudge(examDetail.getJudge());
+                }
+                if (examDetail.getBlank() != null){
+                    examOut.getQuestionOuts().get(i).setBlank(examDetail.getBlank());
+                }
             }
         }
         return examOut;
