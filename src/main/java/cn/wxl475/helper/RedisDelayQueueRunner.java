@@ -10,10 +10,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 启动延迟队列
@@ -22,10 +18,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisDelayQueueRunner implements CommandLineRunner {
 
+    private final RedisDelayQueueUtil redisDelayQueueUtil;
+    private final ThreadPoolTaskExecutor threadPool;
     @Autowired
-    private RedisDelayQueueUtil redisDelayQueueUtil;
-    @Autowired
-    private ThreadPoolTaskExecutor threadPool;
+    public RedisDelayQueueRunner(RedisDelayQueueUtil redisDelayQueueUtil, ThreadPoolTaskExecutor threadPool) {
+        this.redisDelayQueueUtil = redisDelayQueueUtil;
+        this.threadPool = threadPool;
+    }
 
     @Override
     public void run(String... args) {

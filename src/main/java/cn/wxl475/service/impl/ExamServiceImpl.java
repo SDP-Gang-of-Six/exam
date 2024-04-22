@@ -1,9 +1,7 @@
 package cn.wxl475.service.impl;
 
 import cn.hutool.core.thread.ThreadUtil;
-import cn.wxl475.client.DataClient;
 import cn.wxl475.client.UserClient;
-import cn.wxl475.config.DefaultFeignConfiguration;
 import cn.wxl475.exception.ExamSolveException;
 import cn.wxl475.mapper.ExamDetailMapper;
 import cn.wxl475.mapper.ExamMapper;
@@ -21,9 +19,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.store.SleepingLockWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,22 +37,26 @@ import static cn.wxl475.redis.RedisConstants.*;
 @Slf4j
 public class ExamServiceImpl implements ExamService {
 
+    private final ExamMapper examMapper;
+    private final ExamDetailMapper examDetailMapper;
+    private final RedisDelayQueueUtil redisDelayQueueUtil;
+    private final CacheClient cacheClient;
+    private final QuestionMapper questionMapper;
+    private final PaperService paperService;
+    private final UserClient userClient;
+    private final QuestionService questionService;
+
     @Autowired
-    private ExamMapper examMapper;
-    @Autowired
-    private ExamDetailMapper examDetailMapper;
-    @Autowired
-    private RedisDelayQueueUtil redisDelayQueueUtil;
-    @Autowired
-    private CacheClient cacheClient;
-    @Autowired
-    private QuestionMapper questionMapper;
-    @Autowired
-    private PaperService paperService;
-    @Autowired
-    private UserClient userClient;
-    @Autowired
-    private QuestionService questionService;
+    public ExamServiceImpl(ExamMapper examMapper, ExamDetailMapper examDetailMapper, RedisDelayQueueUtil redisDelayQueueUtil, CacheClient cacheClient, QuestionMapper questionMapper, PaperService paperService, UserClient userClient, QuestionService questionService) {
+        this.examMapper = examMapper;
+        this.examDetailMapper = examDetailMapper;
+        this.redisDelayQueueUtil = redisDelayQueueUtil;
+        this.cacheClient = cacheClient;
+        this.questionMapper = questionMapper;
+        this.paperService = paperService;
+        this.userClient = userClient;
+        this.questionService = questionService;
+    }
 
     @Override
     public Long startExam(Exam exam) {
@@ -140,25 +140,13 @@ public class ExamServiceImpl implements ExamService {
             // 判断答案是否正确
             switch (question.getQuestionType()) {
                 case option:
-                    if (examDetail.getYourOption() == question.getRightOption()) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getYourOption() == question.getRightOption());
                     break;
                 case judge:
-                    if (examDetail.getJudge() == question.isRightJudge()) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getJudge() == question.isRightJudge());
                     break;
                 case blank:
-                    if (examDetail.getBlank().equals(question.getRightBlank())) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getBlank().equals(question.getRightBlank()));
                     break;
             }
             // 计算分数
@@ -245,7 +233,7 @@ public class ExamServiceImpl implements ExamService {
                 TimeUnit.MINUTES
         );
         // 如果考试已经结束，不允许修改
-        if (exam.isStatus()==true) {
+        if (exam.isStatus()) {
             throw new ExamSolveException("submitPaper: 考试已经结束，不允许修改");
         }
 

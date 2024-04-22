@@ -29,28 +29,30 @@ import static cn.wxl475.redis.RedisConstants.*;
 public class examAutoSubmit implements RedisDelayQueueHandle<Long> {
 
 
+    private final ExamMapper examMapper;
+    private final CacheClient cacheClient;
+    private final ExamDetailMapper examDetailMapper;
+    private final PaperService paperService;
+    private final QuestionMapper questionMapper;
     @Autowired
-    private ExamMapper examMapper;
-    @Autowired
-    private CacheClient cacheClient;
-    @Autowired
-    private ExamDetailMapper examDetailMapper;
-    @Autowired
-    private PaperService paperService;
-    @Autowired
-    private QuestionMapper questionMapper;
+    public examAutoSubmit(ExamMapper examMapper, CacheClient cacheClient, ExamDetailMapper examDetailMapper, PaperService paperService, QuestionMapper questionMapper) {
+        this.examMapper = examMapper;
+        this.cacheClient = cacheClient;
+        this.examDetailMapper = examDetailMapper;
+        this.paperService = paperService;
+        this.questionMapper = questionMapper;
+    }
 
 
     @Override
     public void execute(Long jobId) {
         log.info("(收到试卷提交延迟消息) {}", jobId);
-        Long examId = jobId;
         Exam exam = cacheClient.queryWithPassThrough(
                 CACHE_EXAM_KEY,
                 LOCK_EXAM_KEY,
-                examId,
+                jobId,
                 Exam.class,
-                id -> examMapper.selectById(examId),
+                id -> examMapper.selectById(jobId),
                 CACHE_EXAM_TTL,
                 TimeUnit.MINUTES
         );
@@ -94,25 +96,13 @@ public class examAutoSubmit implements RedisDelayQueueHandle<Long> {
             // 判断答案是否正确
             switch (question.getQuestionType()) {
                 case option:
-                    if (examDetail.getYourOption() == question.getRightOption()) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getYourOption() == question.getRightOption());
                     break;
                 case judge:
-                    if (examDetail.getJudge() == question.isRightJudge()) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getJudge() == question.isRightJudge());
                     break;
                 case blank:
-                    if (examDetail.getBlank().equals(question.getRightBlank())) {
-                        examDetail.setRight(true);
-                    } else {
-                        examDetail.setRight(false);
-                    }
+                    examDetail.setRight(examDetail.getBlank().equals(question.getRightBlank()));
                     break;
             }
             // 计算分数

@@ -2,8 +2,8 @@ package cn.wxl475.service.impl;
 
 import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.Page;
-import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.pojo.enums.QuestionType;
+import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.repo.QuestionEsRepo;
 import cn.wxl475.service.QuestionService;
@@ -13,8 +13,6 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
@@ -23,7 +21,6 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static cn.wxl475.redis.RedisConstants.*;
@@ -32,16 +29,17 @@ import static cn.wxl475.redis.RedisConstants.*;
 @Service
 public class QuestionServiceImpl implements QuestionService {
 
+    private final QuestionMapper questionMapper;
+    private final CacheClient cacheClient;
+    private final ElasticsearchRestTemplate elasticsearchRestTemplate;
+    private final QuestionEsRepo questionEsRepo;
     @Autowired
-    private QuestionMapper questionMapper;
-    @Autowired
-    private CacheClient cacheClient;
-    @Autowired
-    private ElasticsearchRestTemplate elasticsearchRestTemplate;
-    @Autowired
-    private QuestionEsRepo questionEsRepo;
-    @Autowired
-    private RedissonClient redisson;
+    public QuestionServiceImpl(QuestionMapper questionMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, QuestionEsRepo questionEsRepo) {
+        this.questionMapper = questionMapper;
+        this.cacheClient = cacheClient;
+        this.elasticsearchRestTemplate = elasticsearchRestTemplate;
+        this.questionEsRepo = questionEsRepo;
+    }
 
 
     @Override
@@ -98,7 +96,6 @@ public class QuestionServiceImpl implements QuestionService {
         if(allField!=null&& !allField.isEmpty()){
             boolQueryBuilder.must(QueryBuilders.multiMatchQuery(allField,"description","optionA","optionB","optionC","optionD","right_blank","questionType","createTime","updateTime"));
         }
-        List<QueryBuilders> queryBuilders = new ArrayList<>();
         if(tag!=null && !tag.isEmpty()){
             boolQueryBuilder.filter(QueryBuilders.termQuery("tag",tag));
         }
@@ -119,7 +116,7 @@ public class QuestionServiceImpl implements QuestionService {
         Long total = hits.getTotalHits();
         ArrayList<Question> questions = new ArrayList<>();
         hits.forEach(question -> questions.add(question.getContent()));
-        return new Page<Question>(total, questions);
+        return new Page<>(total, questions);
     }
 
 //    public Boolean LockQuestions(ArrayList<Question> questions) {

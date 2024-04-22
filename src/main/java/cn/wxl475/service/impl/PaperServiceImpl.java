@@ -33,23 +33,26 @@ import static cn.wxl475.redis.RedisConstants.*;
 @Service
 public class PaperServiceImpl implements PaperService {
 
+    private final PaperMapper paperMapper;
+    private final PaperScoreMapper paperScoreMapper;
+    private final CacheClient cacheClient;
+    private final ElasticsearchRestTemplate elasticsearchRestTemplate;
+    private final PaperEsRepo paperEsRepo;
     @Autowired
-    private PaperMapper paperMapper;
-    @Autowired
-    private PaperScoreMapper paperScoreMapper;
-    @Autowired
-    private CacheClient cacheClient;
-    @Autowired
-    private ElasticsearchRestTemplate elasticsearchRestTemplate;
-    @Autowired
-    private PaperEsRepo paperEsRepo;
+    public PaperServiceImpl(PaperMapper paperMapper, PaperScoreMapper paperScoreMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, PaperEsRepo paperEsRepo) {
+        this.paperMapper = paperMapper;
+        this.paperScoreMapper = paperScoreMapper;
+        this.cacheClient = cacheClient;
+        this.elasticsearchRestTemplate = elasticsearchRestTemplate;
+        this.paperEsRepo = paperEsRepo;
+    }
 
 
     @Override
     public Long createPaper(PaperCreater paperCreater) {
         Paper paper = ConvertUtil.convertPaperCreaterToPaper(paperCreater);
         ArrayList<PaperScoreCreater> paperScoreCreaters = paperCreater.getPaperScores();
-        if (!isSumEqualTotalScore(paperScoreCreaters, paper.getTotalScore())) {
+        if (isNotSumEqualTotalScore(paperScoreCreaters, paper.getTotalScore())) {
             return -1L;
         }
         paperMapper.insert(paper);
@@ -86,10 +89,10 @@ public class PaperServiceImpl implements PaperService {
                 CACHE_PAPER_TTL,
                 TimeUnit.MINUTES
         );
-        ArrayList<PaperScoreCreater> paperScoreCreaters = new ArrayList<PaperScoreCreater>();
+        ArrayList<PaperScoreCreater> paperScoreCreaters = new ArrayList<>();
         if (paperCreater.getPaperScores()!=null){
             paperScoreCreaters = paperCreater.getPaperScores();
-            if (!isSumEqualTotalScore(paperScoreCreaters, Repaper.getTotalScore())) {
+            if (isNotSumEqualTotalScore(paperScoreCreaters, Repaper.getTotalScore())) {
                 throw new RuntimeException("试卷总分与题目分数不符");
             }
         }
@@ -178,16 +181,16 @@ public class PaperServiceImpl implements PaperService {
         SearchHits<Paper> hits = elasticsearchRestTemplate.search(queryBuilder.build(), Paper.class);
         ArrayList<Paper> papers = new ArrayList<>();
         hits.forEach(paper -> papers.add(paper.getContent()));
-        return new Page<Paper>(hits.getTotalHits(), papers);
+        return new Page<>(hits.getTotalHits(), papers);
     }
 
 
-    private boolean isSumEqualTotalScore(ArrayList<PaperScoreCreater> paperScoreCreaters, Integer totalScore) {
+    private boolean isNotSumEqualTotalScore(ArrayList<PaperScoreCreater> paperScoreCreaters, Integer totalScore) {
         Integer sum = 0;
         for (PaperScoreCreater paperScoreCreater : paperScoreCreaters) {
             sum += paperScoreCreater.getScore();
         }
-        return sum.equals(totalScore);
+        return !sum.equals(totalScore);
     }
 
     private List<PaperScore> getPaperScoresByPaperId(Long paperId) {
