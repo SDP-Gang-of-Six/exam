@@ -14,4 +14,7 @@ public interface PaperScoreMapper extends BaseMapper<PaperScore> {
 
     @Select("select * from exam.paperScore where paper_id = #{paperId}")
     ArrayList<PaperScore> selectByPaperId(Long paperId);
+
+    @Select("select * from exam.paperScore where question_id = #{questionId}")
+    ArrayList<PaperScore> selectByQuestionId(Long questionId);
 }

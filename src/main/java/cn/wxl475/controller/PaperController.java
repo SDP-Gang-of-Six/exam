@@ -30,7 +30,12 @@ public class PaperController {
     @PostMapping("/deletePaper")
     public Result deletePaper(@RequestBody() List<Long> paperIds) {
         ArrayList<Long> arrayList = new ArrayList<>(paperIds);
-        paperService.deletePaper(arrayList);
+        try {
+            paperService.deletePaper(arrayList);
+        }catch (Exception e){
+            log.info(e.getMessage());
+            return Result.error(e.getMessage());
+        }
         return Result.success();
     }
     @PostMapping("/updatePaper")

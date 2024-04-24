@@ -26,7 +26,12 @@ public class QuestionController {
     @PostMapping("/deleteQuestion")
     public Result deleteQuestion(@RequestBody()  List<Long> questionIds) {
         ArrayList<Long> arrayList = new ArrayList<>(questionIds);
-        questionService.deleteQuestion(arrayList);
+        try {
+            questionService.deleteQuestion(arrayList);
+        } catch (Exception e) {
+            log.info(e.getMessage());
+            return Result.error(e.getMessage());
+        }
         return Result.success();
     }
     @PostMapping("/updateQuestion")

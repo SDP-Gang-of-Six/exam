@@ -1,8 +1,11 @@
 package cn.wxl475.service.impl;
 
+import cn.wxl475.exception.PaperScoreException;
+import cn.wxl475.mapper.PaperScoreMapper;
 import cn.wxl475.mapper.QuestionMapper;
 import cn.wxl475.pojo.Page;
 import cn.wxl475.pojo.enums.QuestionType;
+import cn.wxl475.pojo.exam.PaperScore;
 import cn.wxl475.pojo.exam.Question;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.repo.QuestionEsRepo;
@@ -33,12 +36,14 @@ public class QuestionServiceImpl implements QuestionService {
     private final CacheClient cacheClient;
     private final ElasticsearchRestTemplate elasticsearchRestTemplate;
     private final QuestionEsRepo questionEsRepo;
+    private final PaperScoreMapper paperScoreMapper;
     @Autowired
-    public QuestionServiceImpl(QuestionMapper questionMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, QuestionEsRepo questionEsRepo) {
+    public QuestionServiceImpl(QuestionMapper questionMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, QuestionEsRepo questionEsRepo, PaperScoreMapper paperScoreMapper) {
         this.questionMapper = questionMapper;
         this.cacheClient = cacheClient;
         this.elasticsearchRestTemplate = elasticsearchRestTemplate;
         this.questionEsRepo = questionEsRepo;
+        this.paperScoreMapper = paperScoreMapper;
     }
 
 
@@ -51,6 +56,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public void deleteQuestion(ArrayList<Long> questionIds) {
+        for ( Long questionId : questionIds) {
+            ArrayList<PaperScore> arrayList = paperScoreMapper.selectByQuestionId(questionId);
+            if(!arrayList.isEmpty()){
+                throw new PaperScoreException("deleteQuestion: 该题目已被试卷引用");
+            }
+        }
         questionMapper.deleteBatchIds(questionIds);
         questionEsRepo.deleteAllById(questionIds);
         for (Long id : questionIds) {

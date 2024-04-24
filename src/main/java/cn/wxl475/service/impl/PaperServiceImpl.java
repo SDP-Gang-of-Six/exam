@@ -1,17 +1,17 @@
 package cn.wxl475.service.impl;
 
+import cn.wxl475.exception.ExamSolveException;
+import cn.wxl475.mapper.ExamMapper;
 import cn.wxl475.mapper.PaperMapper;
 import cn.wxl475.mapper.PaperScoreMapper;
 import cn.wxl475.pojo.Page;
-import cn.wxl475.pojo.exam.Paper;
-import cn.wxl475.pojo.exam.PaperCreater;
-import cn.wxl475.pojo.exam.PaperScore;
-import cn.wxl475.pojo.exam.PaperScoreCreater;
+import cn.wxl475.pojo.exam.*;
 import cn.wxl475.redis.CacheClient;
 import cn.wxl475.repo.PaperEsRepo;
 import cn.wxl475.service.PaperService;
 import cn.wxl475.utils.ConvertUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -38,13 +38,15 @@ public class PaperServiceImpl implements PaperService {
     private final CacheClient cacheClient;
     private final ElasticsearchRestTemplate elasticsearchRestTemplate;
     private final PaperEsRepo paperEsRepo;
+    private final ExamMapper examMapper;
     @Autowired
-    public PaperServiceImpl(PaperMapper paperMapper, PaperScoreMapper paperScoreMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, PaperEsRepo paperEsRepo) {
+    public PaperServiceImpl(PaperMapper paperMapper, PaperScoreMapper paperScoreMapper, CacheClient cacheClient, ElasticsearchRestTemplate elasticsearchRestTemplate, PaperEsRepo paperEsRepo, ExamMapper examMapper) {
         this.paperMapper = paperMapper;
         this.paperScoreMapper = paperScoreMapper;
         this.cacheClient = cacheClient;
         this.elasticsearchRestTemplate = elasticsearchRestTemplate;
         this.paperEsRepo = paperEsRepo;
+        this.examMapper = examMapper;
     }
 
 
@@ -66,6 +68,12 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public void deletePaper(ArrayList<Long> arrayList) {
+        for(Long paperId: arrayList){
+            boolean isUsed = examMapper.exists(new QueryWrapper<Exam>().eq("paper_id",paperId));
+            if(isUsed){
+                throw new ExamSolveException("deletePaper: 该试卷已被考试引用");
+            }
+        }
         paperMapper.deleteBatchIds(arrayList);
         paperEsRepo.deleteAllById(arrayList);
         paperScoreMapper.deleteByPaperIds(arrayList.toArray(new Long[0]));
